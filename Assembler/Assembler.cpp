@@ -180,10 +180,11 @@ void Assembler::tokenize ()
 		current_line.len    = line_end - line_begin;
 		current_line.number = current_line_number;
 
+		bool skip = false;
 		for (const char* token_begin = line_begin, *token_end = Assembler_strpbrk_x2 (token_begin, CODE_DELIMITERS, LINE_DELIMITERS); token_end && token_begin < line_end; token_begin = token_end+1, token_end = Assembler_strpbrk_x2 (token_begin, CODE_DELIMITERS, LINE_DELIMITERS))
 		{
 			if (token_begin >= token_end)                                           continue;
-			if (strncmp (token_begin, COMMENT_SEQUENCE, COMMENT_SEQUENCE_LEN) == 0) continue;
+			if (strncmp (token_begin, COMMENT_SEQUENCE, COMMENT_SEQUENCE_LEN) == 0) break;
 
 			source_code_container::token current_token = interptetToken (token_begin, token_end, current_token_number, current_line_number);
 			tmp_tokens_buff.push_back (current_token);
