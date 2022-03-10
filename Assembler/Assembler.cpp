@@ -9,12 +9,17 @@
 #pragma warning (disable: 4018)
 
 //------------------------------
+//                                                       line digits, addr digits
+Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = {3,           4          };
+
+//------------------------------
 
 Assembler::Assembler ():
 	m_program          (),
 	m_source_code      ({0}),
 	m_next_token_index (0),
-	m_listing_stream   (nullptr)
+	m_listing_stream   (nullptr),
+	m_listing_settings (DEFAULT_LISTINGS_SETTINGS)
 {}
 
 //------------------------------
@@ -67,17 +72,31 @@ std::ostream* Assembler::getListingStream ()
 
 //------------------------------
 
+void Assembler::setListingSettings (listing_settings settings)
+{
+	m_listing_settings = settings;
+}
+
+Assembler::listing_settings Assembler::getListingSettings ()
+{
+	return m_listing_settings;
+}
+
+//------------------------------
+
 void Assembler::assemble ()
 {
 	m_program.clear ();
 	m_program.push (static_cast <stack_value_t> (ASSEMBLER_VERSION));
 
 	bool hlt_found = false;
-	while (m_next_token_index < m_source_code.tokens_count && !hlt_found)
+	while (m_next_token_index < m_source_code.tokens_count)
 	{
 		source_code_container::token token = nextToken  (TokenType::keyword);
 		ByteCode                     cmd   = toByteCode (token.value);
 
+		source_code_container::line line = m_source_code.lines[token.line_number];
+		
 		if (cmd >= ByteCode::amount)
 			throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
 
@@ -116,10 +135,14 @@ void Assembler::assemble ()
 		}
 
 		nextToken (TokenType::newline);
+		listing ("%0*zu %0*X %.*s\n", m_listing_settings.line_digits, token.line_number, m_listing_settings.addr_digits, m_program.bytes (), line.len, line.begin);
 	}
 
 	if (!hlt_found)
+	{
 		m_program.push (static_cast <stack_value_t> (ByteCode::hlt));
+		listing ("%*s %0*X [auto healt]\n", m_listing_settings.line_digits, "", m_listing_settings.addr_digits, m_program.bytes ());
+	}
 
 	m_program.shrink ();
 }
@@ -355,7 +378,7 @@ void Assembler::listing (const char* format, ...)
 	vsprintf_s (str, buffsize, format, args);
 	va_end (args);
 
-	m_listing_stream -> write (str, buffsize);
+	m_listing_stream -> write (str, buffsize-1);
 	delete[] (str);
 }
 

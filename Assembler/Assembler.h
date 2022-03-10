@@ -30,6 +30,12 @@ public:
 class Assembler
 {
 public:
+	struct listing_settings
+	{
+		unsigned __int8 line_digits;
+		unsigned __int8 addr_digits;
+	};
+
 	Assembler ();
 
 	~Assembler ();
@@ -45,6 +51,9 @@ public:
 
 	void assemble ();
 	void test     ();
+
+	void             setListingSettings (listing_settings settings);
+	listing_settings getListingSettings ();
 
 private:
 	ProgramContainer m_program;
@@ -82,6 +91,8 @@ private:
 		size_t       tokens_count;
 	} m_source_code;
 
+	listing_settings m_listing_settings;
+
 	TokenType                    determineTokenType    (const char* begin, const char* end);
 	stack_value_t                interpretNumberToken  (const char* begin, size_t len);
 	stack_value_t                interpretCommandToken (const char* begin, size_t len);
@@ -104,6 +115,10 @@ private:
 //------------------------------
 
 #define assembler_assert(expr) if (!(expr)) throw assembler_error ("Assertion failed in file %s, function %s, line #%d: '" #expr "' == 0", __FILE__, __func__, __LINE__);
+
+//------------------------------
+
+extern Assembler::listing_settings DEFAULT_LISTING_SETTINGS;
 
 //------------------------------
 

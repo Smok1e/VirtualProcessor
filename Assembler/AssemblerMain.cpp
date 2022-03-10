@@ -9,6 +9,8 @@
 
 int main ()
 {
+	std::stringstream listing;
+
 	try
 	{
 		const char* source =
@@ -20,9 +22,12 @@ int main ()
 			"out             \n";
 
 		Assembler assembler;
+		assembler.setListingStream (&listing);
+
 		assembler.setSourceCode (source);
 		assembler.assemble      ();
-		assembler.test          ();
+
+		printf ("Listing:\n%s", listing.str ().c_str ());
 	}
 
 	catch (assembler_error err)
