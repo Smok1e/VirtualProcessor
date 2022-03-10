@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ProcessorMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Stack\Stack.cpp">
+      <Filter>Source Files\External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Stack\StackCheckError.cpp">
+      <Filter>Source Files\External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ByteCode\ByteCode.cpp">
+      <Filter>Source Files\External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ByteCode\Utils.cpp">
+      <Filter>Source Files\External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Processor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ByteCode\ExceptionMessage.cpp">
+      <Filter>Source Files\External Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{bb345d7c-18f8-4529-8bb4-fea23c9a439d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{04addba3-6690-4b0d-87c1-ea0c4b52ba19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{43bfb900-def1-44b6-ada1-0e940c652679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\External Sources">
+      <UniqueIdentifier>{30961715-3c6e-4617-a82c-afb3cb160866}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Processor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
