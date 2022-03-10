@@ -7,10 +7,6 @@
 
 //------------------------------
 
-void strpbrk_test (const char* source, const char* delimiters);
-
-//------------------------------
-
 int main ()
 {
 	try
@@ -26,28 +22,13 @@ int main ()
 		Assembler assembler;
 		assembler.setSourceCode (source);
 		assembler.assemble      ();
-
-		assembler.test ();
+		assembler.test          ();
 	}
 
 	catch (assembler_error err)
 	{
 		printf ("Exception: %s\n", err.what ());
 	}
-}
-
-//------------------------------
-
-void strpbrk_test (const char* source, const char* delimiters)
-{
-	printf ("Strpbrk ('%s', '%s') test: ", source, delimiters);
-	const char* got = Assembler_strpbrk (source, delimiters);
-	const char* exp =           strpbrk (source, delimiters);
-
-	if (exp == got || strcmp (exp, got) == 0) printf ("OK!");
-	else printf ("FAILED: expected '%s' (%p), got '%s' (%p)", exp, exp, got, got);
-
-	putchar ('\n');
 }
 
 //------------------------------

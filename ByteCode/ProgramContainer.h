@@ -14,8 +14,11 @@ public:
 	ProgramContainer ();
 	ProgramContainer (const ProgramContainer& copy);
 
-	void save (std::ostream& stream);
+	void save (std::ostream& stream) const;
+	void save (const char* filename) const;
+
 	void load (std::istream& stream);
+	void load (const char* filename);
 
 	template <typename value_t> void    push (value_t value);
 	template <typename value_t> value_t pop  ();

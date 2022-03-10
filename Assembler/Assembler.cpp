@@ -6,6 +6,8 @@
 #include "Utils.hpp"
 #include "ByteCode.h"
 
+#pragma warning (disable: 4018)
+
 //------------------------------
 
 Assembler::Assembler ():
@@ -73,8 +75,8 @@ void Assembler::assemble ()
 	bool hlt_found = false;
 	while (m_next_token_index < m_source_code.tokens_count && !hlt_found)
 	{
-		auto     token = nextToken  (TokenType::keyword);
-		ByteCode cmd   = toByteCode (token.value);
+		source_code_container::token token = nextToken  (TokenType::keyword);
+		ByteCode                     cmd   = toByteCode (token.value);
 
 		if (cmd >= ByteCode::amount)
 			throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
@@ -231,7 +233,7 @@ stack_value_t Assembler::interpretCommandToken (const char* str, size_t len)
 
 Assembler::source_code_container::token Assembler::interptetToken (const char* begin, const char* end, size_t number, size_t line_number)
 {
-	source_code_container::token token;
+	source_code_container::token token = {};
 	token.begin       = begin;
 	token.end         = end;
 	token.len         = end - begin;
@@ -308,7 +310,7 @@ Assembler::source_code_container::token& Assembler::nextToken ()
 
 Assembler::source_code_container::token& Assembler::nextToken (TokenType type)
 {
-	auto token = nextToken ();
+	source_code_container::token token = nextToken ();
 
 	if (token.type != type)
 		throw assembler_error ("Expected %s, got %s", StrTokenType (type), StrTokenType (token.type));

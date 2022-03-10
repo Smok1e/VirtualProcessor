@@ -14,7 +14,7 @@ ProgramContainer::ProgramContainer (const ProgramContainer& copy):
 
 //------------------------------
 
-void ProgramContainer::save (std::ostream& stream)
+void ProgramContainer::save (std::ostream& stream) const
 {
 	program_header header  = {};
 	header.signature       = PROGRAM_SIGNATURE;
@@ -23,9 +23,21 @@ void ProgramContainer::save (std::ostream& stream)
 	header.bytes_count     = bytes ();
 	header.numbers_acuracy = NUMBERS_ACURACY;
 
-	stream.write (reinterpret_cast <char*> (&header), sizeof (program_header));
-	stream.write (reinterpret_cast <char*> (data ()), bytes ());
+	stream.write (reinterpret_cast <const char*> (&header), sizeof (program_header));
+	stream.write (reinterpret_cast <const char*> (data ()), bytes ());
 }
+
+void ProgramContainer::save (const char* filename) const
+{
+	std::ofstream stream;
+	stream.exceptions (std::ios::failbit | std::ios::badbit);
+	stream.open (filename, std::ios::binary);
+
+	save (stream);
+	stream.close ();
+}
+
+//------------------------------
 
 void ProgramContainer::load (std::istream& stream)
 {
@@ -38,6 +50,16 @@ void ProgramContainer::load (std::istream& stream)
 	clear ();
 	m_data.resize (header.bytes_count);
 	stream.read (data (), header.bytes_count);
+}
+
+void ProgramContainer::load (const char* filename)
+{
+	std::ifstream stream;
+	stream.exceptions (std::ios::failbit | std::ios::badbit);
+	stream.open (filename, std::ios::binary);
+
+	load (stream);
+	stream.close ();
 }
 
 //------------------------------

@@ -51,7 +51,7 @@ extern const char*            COMMENT_SEQUENCE;
 extern const unsigned         COMMENT_SEQUENCE_LEN;
        const unsigned         NUMBERS_ACURACY               = 3;
        const unsigned         NUMBERS_MODIFIER	            = static_cast <unsigned> (pow (10, NUMBERS_ACURACY));
-       const unsigned         ASSEMBLER_VERSION             = 11;
+       const unsigned         ASSEMBLER_VERSION             = 12;
        const unsigned         ASSEMBLER_BUFFSIZE            = 1024;
        const unsigned __int32 PROGRAM_SIGNATURE             = TXT232UINT ("Meow");
        const unsigned         LISTING_LINE_NUMBER_LENGTH    = 3;
