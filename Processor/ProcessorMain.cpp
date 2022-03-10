@@ -15,7 +15,8 @@ int main ()
 		processor.defaultIO ();
 		processor.setProgram (program);
 
-		processor.run ();
+		double retval = processor.run ();
+		printf ("Return value: %lf\n", retval);	
 	}
 
 	catch (processor_error err)
