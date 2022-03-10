@@ -19,7 +19,7 @@ class Application:
         self.window = QWidget ()
         self.window.resize (1000, 800)
 
-        self.layout = QVBoxLayout ()
+        self.layout = QHBoxLayout ()
 
         self.init_interface ()
 
@@ -36,9 +36,17 @@ class Application:
     def init_interface (self):
         self.code_editor = QTextEdit ()
         self.code_editor.setFixedSize (800, 800)
-
         self.layout.addWidget (self.code_editor)
 
+        self.save_button = QPushButton ("Save")
+        self.save_button.clicked.connect (self.on_ckick_save)
+        self.layout.addWidget (self.save_button)
+
+#===================================
+
+    def on_ckick_save (self):
+        QMessageBox.about (None, "Save button pressed", "Sosi chlen")
+    
 #===================================
 
 app = Application ()
