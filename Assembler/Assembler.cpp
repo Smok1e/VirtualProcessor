@@ -9,8 +9,8 @@
 #pragma warning (disable: 4018)
 
 //------------------------------
-//                                                       line digits, addr digits
-Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = {3,           4          };
+//                                                       line digits, addr digits, content bytes
+Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = {3,           4,           6            };
 
 //------------------------------
 
@@ -87,12 +87,14 @@ Assembler::listing_settings Assembler::getListingSettings ()
 void Assembler::assemble ()
 {
 	m_program.clear ();
+
 	m_program.push (static_cast <stack_value_t> (ASSEMBLER_VERSION));
+	listing_line (-1, 0, m_program.begin (), sizeof (stack_value_t), "[version]");
 
 	bool hlt_found = false;
 	while (m_next_token_index < m_source_code.tokens_count)
 	{
-		uintptr_t addr = m_program.bytes ();
+		size_t prev_addr = m_program.bytes ();
 
 		source_code_container::token token = nextToken  (TokenType::keyword);
 		ByteCode                     cmd   = toByteCode (token.value);
@@ -137,13 +139,15 @@ void Assembler::assemble ()
 		}
 
 		nextToken (TokenType::newline);
-		listing ("%0*zu %0*X %.*s\n", m_listing_settings.line_digits, token.line_number, m_listing_settings.addr_digits, addr, line.len, line.begin);
+
+		listing_line (line.number, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, line.begin, line.len);
 	}
 
 	if (!hlt_found)
 	{
-		listing ("%*s %0*X [auto healt]\n", m_listing_settings.line_digits, "", m_listing_settings.addr_digits, m_program.bytes ());
+		size_t prev_addr = m_program.bytes ();
 		m_program.push (ByteCode::hlt);
+		listing_line (-1, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, "[auto haltion]");
 	}
 
 	m_program.shrink ();
@@ -382,6 +386,33 @@ void Assembler::listing (const char* format, ...)
 
 	m_listing_stream -> write (str, len);
 	delete[] (str);
+}
+
+//------------------------------
+
+void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, size_t content_size, const char* message, int len /*= -1*/)
+{
+	if (len < 0) len = strlen (message);
+	
+	if (line >= 0) 
+		listing ("%0*zu ", m_listing_settings.line_digits, line);
+
+	else
+	{
+		for (size_t i = 0; i < m_listing_settings.line_digits; i++)
+			m_listing_stream -> put ('-');
+
+		m_listing_stream -> put (' ');
+	}
+
+	for (size_t i = 0; i < content_size; i++)
+		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
+
+	if (content_size < m_listing_settings.cont_bytes)
+		for (size_t i = 0; i < m_listing_settings.cont_bytes - content_size; i++)
+			listing ("   ");
+
+	listing ("0x%0*X %.*s\n", m_listing_settings.addr_digits, addr, len, message);
 }
 
 //------------------------------

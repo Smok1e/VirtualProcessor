@@ -34,6 +34,7 @@ public:
 	{
 		unsigned __int8 line_digits;
 		unsigned __int8 addr_digits;
+		unsigned __int8 cont_bytes;
 	};
 
 	Assembler ();
@@ -43,17 +44,17 @@ public:
 	void        setSourceCode (const char* source);
 	const char* getSourceCode ();
 
-	const ProgramContainer& getProgram ();
 	void                    setProgram (const ProgramContainer& program);
+	const ProgramContainer& getProgram ();
+
+	void             setListingSettings (listing_settings settings);
+	listing_settings getListingSettings ();
 
 	void          setListingStream (std::ostream* stream);
 	std::ostream* getListingStream ();
 
 	void assemble ();
 	void test     ();
-
-	void             setListingSettings (listing_settings settings);
-	listing_settings getListingSettings ();
 
 private:
 	ProgramContainer m_program;
@@ -109,7 +110,8 @@ private:
 	source_code_container::token& nextToken ();
 	source_code_container::token& nextToken (TokenType type);
 
-	void listing (const char* format, ...);
+	void listing      (const char* format, ...);
+	void listing_line (int line, uintptr_t addr, byte_t* content_begin, size_t content_size, const char* message, int len = -1);
 };
 
 //------------------------------

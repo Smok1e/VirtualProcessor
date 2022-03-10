@@ -16,12 +16,12 @@ ProgramContainer::ProgramContainer (const ProgramContainer& copy):
 
 void ProgramContainer::save (std::ostream& stream) const
 {
-	program_header header  = {};
-	header.signature       = PROGRAM_SIGNATURE;
-	header.version         = ASSEMBLER_VERSION;
-	header.elem_count      = count ();
-	header.bytes_count     = bytes ();
-	header.numbers_acuracy = NUMBERS_ACURACY;
+	program_header header   = {};
+	header.signature        = PROGRAM_SIGNATURE;
+	header.version          = ASSEMBLER_VERSION;
+	header.elem_count       = count ();
+	header.bytes_count      = bytes ();
+	header.numbers_modifier = NUMBERS_MODIFIER;
 
 	stream.write (reinterpret_cast <const char*> (&header), sizeof (program_header));
 	stream.write (reinterpret_cast <const char*> (data ()), bytes ());

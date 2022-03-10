@@ -22,12 +22,12 @@ int main ()
 			"out        \n";
 
 		Assembler assembler;
-		assembler.setListingStream (&listing);
+		assembler.setListingStream (&std::cout);
 		assembler.setSourceCode    (source);
 		assembler.assemble         ();
 
-		printf ("Listing:\n");
-		printf (listing.str ().c_str ());
+		//printf ("Listing:\n");
+		//printf (listing.str ().c_str ());
 	}
 
 	catch (assembler_error err)
