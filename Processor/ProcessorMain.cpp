@@ -9,13 +9,19 @@ int main ()
 	try
 	{
 		ProgramContainer program;
-		program.load ("test.bin");
+		program.load ("../Assembler/test.bin");
 
+		Processor processor;
+		processor.defaultIO ();
+		processor.setProgram (program);
+
+		processor.run ();
 	}
 
 	catch (processor_error err)
 	{
-		printf ("Processor error: %s\n", err.what ());
+		// printf ("Processor error: %s\n", err.what ());
+		// вывод ошибок направлен в stderr
 	}
 
 	catch (std::exception exc)

@@ -14,17 +14,24 @@ int main ()
 	try
 	{
 		const char* source =
-			"push 123  \n"
-			"push 10   \n"
-			"add       \n"
-			"push 5    \n"
-			"mul       \n"
-			"out       \n";
+			"push 4                 \n"
+			"push 10                \n"
+			"add                    \n"
+			"push 5  >Test comment! \n"
+			"mul     >Meow          \n"
+			"in                     \n"
+			"div                    \n"
+			"out                    \n"
+			"man hlp                \n"
+			"hlp                    \n";
 
 		Assembler assembler;
 		assembler.setListingStream (&listing);
 		assembler.setSourceCode    (source);
 		assembler.assemble         ();
+
+		assembler.getProgram ().save ("test.bin");
+		printf ("Program saved as test.bin\n\n");
 
 		printf ("Listing:\n");
 		printf (listing.str ().c_str ());

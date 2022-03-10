@@ -93,10 +93,10 @@ double Processor::run ()
 	m_next_data_index = 0;
 	m_retval          = 0;
 
-	unsigned version = static_cast <unsigned> (nextStackValue ()) != ASSEMBLER_VERSION;
+	unsigned version = static_cast <unsigned> (nextStackValue ());
 	if (version != ASSEMBLER_VERSION)
 	{
-		error ("Fatal error: Wrong version (program version is %d, processor version is %d)", version, ASSEMBLER_BUFFSIZE);
+		error ("Fatal error: Wrong version (program version is %d, processor version is %d)\n", version, ASSEMBLER_VERSION);
 		throw processor_error ("Wrong program version (%d instead of %d)", version, ASSEMBLER_VERSION);
 	}
 
@@ -129,6 +129,8 @@ value_t Processor::nextValue ()
 
 	value_t value = m_program.get <value_t> (m_next_data_index);
 	m_next_data_index += sizeof (value_t);
+
+	return value;
 }
 
 //------------------------------
@@ -240,7 +242,7 @@ void Processor::processInstruction (ByteCode cmd)
 
 		case ByteCode::man:
 		{
-			output ("%s\n", nextInstruction ());
+			output ("%s\n", CommandManual (nextInstruction ()));
 			break;
 		}
 
