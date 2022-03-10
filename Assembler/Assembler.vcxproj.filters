@@ -22,7 +22,7 @@
     <ClCompile Include="..\Stack\StackCheckError.cpp">
       <Filter>Source Files\External Sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\ByteCode\PrgogramContainer.cpp">
+    <ClCompile Include="..\ByteCode\ProgramContainer.cpp">
       <Filter>Source Files\External Sources</Filter>
     </ClCompile>
   </ItemGroup>

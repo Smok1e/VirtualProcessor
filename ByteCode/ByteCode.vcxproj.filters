@@ -43,7 +43,7 @@
     <ClCompile Include="ExceptionMessage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrgogramContainer.cpp">
+    <ClCompile Include="ProgramContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

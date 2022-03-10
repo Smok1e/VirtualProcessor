@@ -88,7 +88,7 @@ void Assembler::assemble ()
 {
 	m_program.clear ();
 
-	m_program.push (static_cast <stack_value_t> (ASSEMBLER_VERSION));
+	m_program.append (static_cast <stack_value_t> (ASSEMBLER_VERSION));
 	listing_line (-1, 0, m_program.begin (), sizeof (stack_value_t), "[version]");
 
 	bool hlt_found = false;
@@ -104,20 +104,20 @@ void Assembler::assemble ()
 		if (cmd >= ByteCode::amount)
 			throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
 
-		m_program.push (cmd);
+		m_program.append (cmd);
 
-		#define ACD_(command, args, desc) case ByteCode::command:    \
-		{														     \
-			for (auto& argtype: args)							     \
-			{													     \
-				stack_value_t value = nextToken (argtype).value;     \
-				if (argtype == TokenType::keyword)				     \
-					m_program.push (static_cast <ByteCode> (value)); \
-																     \
-				else m_program.push (value);					     \
-			}													     \
-																     \
-			break;                                                   \
+		#define ACD_(command, args, desc) case ByteCode::command:      \
+		{														       \
+			for (auto& argtype: args)							       \
+			{													       \
+				stack_value_t value = nextToken (argtype).value;       \
+				if (argtype == TokenType::keyword)				       \
+					m_program.append (static_cast <ByteCode> (value)); \
+																       \
+				else m_program.append (value);					       \
+			}													       \
+																       \
+			break;                                                     \
 		}
 		switch (cmd)
 		{
@@ -146,7 +146,7 @@ void Assembler::assemble ()
 	if (!hlt_found)
 	{
 		size_t prev_addr = m_program.bytes ();
-		m_program.push (ByteCode::hlt);
+		m_program.append (ByteCode::hlt);
 		listing_line (-1, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, "[auto haltion]");
 	}
 

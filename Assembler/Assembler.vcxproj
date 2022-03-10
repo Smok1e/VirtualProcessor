@@ -145,7 +145,7 @@
   <ItemGroup>
     <ClCompile Include="..\ByteCode\ByteCode.cpp" />
     <ClCompile Include="..\ByteCode\ExceptionMessage.cpp" />
-    <ClCompile Include="..\ByteCode\PrgogramContainer.cpp" />
+    <ClCompile Include="..\ByteCode\ProgramContainer.cpp" />
     <ClCompile Include="..\ByteCode\Utils.cpp" />
     <ClCompile Include="..\Stack\Stack.cpp" />
     <ClCompile Include="..\Stack\StackCheckError.cpp" />

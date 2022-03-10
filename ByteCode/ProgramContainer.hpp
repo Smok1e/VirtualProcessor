@@ -3,22 +3,23 @@
 //------------------------------
 
 template <typename value_t>
-void ProgramContainer::push (value_t value)
+void ProgramContainer::append (value_t value) 
 {
 	extend (reinterpret_cast <byte_t*> (&value), sizeof (value_t));
 }
 
+//------------------------------
+
 template <typename value_t>
-value_t ProgramContainer::pop ()
+value_t ProgramContainer::get (size_t index_in_bytes) const
 {
 	#ifdef _DEBUG
-		if (empty ()                   ) throw std::runtime_error ("Container is empty");
-		if (bytes () < sizeof (value_t)) throw std::runtime_error ("Wrong data size"   );
+		if (index_in_bytes >= bytes ()) throw std::runtime_error ("Wrong index");
 	#endif
 
 	value_t value = {};
+	std::memcpy (&value, data () + index_in_bytes, sizeof (value_t));
 
-	remove (reinterpret_cast <byte_t*> (&value), sizeof (value));
 	return value;
 }
 

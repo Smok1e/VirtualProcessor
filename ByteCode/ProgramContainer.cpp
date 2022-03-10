@@ -3,13 +3,11 @@
 //------------------------------
 
 ProgramContainer::ProgramContainer ():
-	m_data  (),
-	m_count (0)
+	m_data  ()
 {}
 
 ProgramContainer::ProgramContainer (const ProgramContainer& copy):
-	m_data  (copy.m_data),
-	m_count (copy.m_count)
+	m_data  (copy.m_data)
 {}
 
 //------------------------------
@@ -19,7 +17,6 @@ void ProgramContainer::save (std::ostream& stream) const
 	program_header header   = {};
 	header.signature        = PROGRAM_SIGNATURE;
 	header.version          = ASSEMBLER_VERSION;
-	header.elem_count       = count ();
 	header.bytes_count      = bytes ();
 	header.numbers_modifier = NUMBERS_MODIFIER;
 
@@ -67,39 +64,19 @@ void ProgramContainer::load (const char* filename)
 void ProgramContainer::extend (const byte_t* src, size_t count)
 {
 	m_data.insert (m_data.end (), src, src+count);
-	m_count++;
 }
 
 void ProgramContainer::remove (byte_t* dst, size_t count)
 {
 	if (dst) std::memcpy (dst, m_data.data () + m_data.size () - count, count);
-
 	m_data.erase (m_data.end () - count, m_data.end ());
-	m_count--;
-}
-
-//------------------------------
-
-ByteCode ProgramContainer::popByteCode ()
-{
-	return pop <ByteCode> ();
-}
-
-stack_value_t ProgramContainer::popStackValue ()
-{
-	return pop <stack_value_t> ();
 }
 
 //------------------------------
 
 bool ProgramContainer::empty () const
 {
-	return !m_count;
-}
-
-size_t ProgramContainer::count () const
-{
-	return m_count;
+	return !bytes ();
 }
 
 size_t ProgramContainer::bytes () const
@@ -112,7 +89,6 @@ size_t ProgramContainer::bytes () const
 void ProgramContainer::clear ()
 {
 	m_data.clear ();
-	m_count = 0;
 }
 
 void ProgramContainer::shrink ()

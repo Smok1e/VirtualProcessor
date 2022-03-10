@@ -45,7 +45,10 @@ enum class TokenType
 
 //------------------------------
 
+extern const unsigned ByteCodesBegin;
 extern const unsigned ByteCodesAmount;
+
+//------------------------------
 
 extern const char*            CODE_DELIMITERS;
 extern const char*            LINE_DELIMITERS;
@@ -53,7 +56,7 @@ extern const char*            COMMENT_SEQUENCE;
 extern const unsigned         COMMENT_SEQUENCE_LEN;
 //     const unsigned         NUMBERS_ACURACY               = 3;
        const unsigned         NUMBERS_MODIFIER	            = 256;
-       const unsigned         ASSEMBLER_VERSION             = 12;
+       const unsigned         ASSEMBLER_VERSION             = 13;
        const unsigned         ASSEMBLER_BUFFSIZE            = 1024;
        const unsigned __int32 PROGRAM_SIGNATURE             = TXT232UINT ("Meow");
        const unsigned         LISTING_LINE_NUMBER_LENGTH    = 3;
@@ -65,7 +68,6 @@ struct program_header
 {
 	unsigned __int32 signature;
 	unsigned __int16 version;
-	unsigned __int32 elem_count;
 	unsigned __int32 bytes_count;
 	unsigned __int8  numbers_modifier;
 };
