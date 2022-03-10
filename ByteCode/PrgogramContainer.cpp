@@ -49,7 +49,7 @@ void ProgramContainer::load (std::istream& stream)
 
 	clear ();
 	m_data.resize (header.bytes_count);
-	stream.read (data (), header.bytes_count);
+	stream.read (reinterpret_cast <char*> (data ()), header.bytes_count);
 }
 
 void ProgramContainer::load (const char* filename)

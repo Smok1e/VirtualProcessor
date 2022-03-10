@@ -122,7 +122,6 @@ extern Assembler::listing_settings DEFAULT_LISTING_SETTINGS;
 
 //------------------------------
 
-std::string Disassemble          (const program_t& program);
 const char* Assembler_strpbrk    (const char* begin, const char* delimiters);
 const char* Assembler_strpbrk_x2 (const char* begin, const char* delimiters1, const char* delimiters2);
 const char* Assembler_strnpbrk   (const char* begin, const char* delimiters, size_t limit);

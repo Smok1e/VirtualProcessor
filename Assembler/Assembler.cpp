@@ -92,6 +92,8 @@ void Assembler::assemble ()
 	bool hlt_found = false;
 	while (m_next_token_index < m_source_code.tokens_count)
 	{
+		uintptr_t addr = m_program.bytes ();
+
 		source_code_container::token token = nextToken  (TokenType::keyword);
 		ByteCode                     cmd   = toByteCode (token.value);
 
@@ -135,13 +137,13 @@ void Assembler::assemble ()
 		}
 
 		nextToken (TokenType::newline);
-		listing ("%0*zu %0*X %.*s\n", m_listing_settings.line_digits, token.line_number, m_listing_settings.addr_digits, m_program.bytes (), line.len, line.begin);
+		listing ("%0*zu %0*X %.*s\n", m_listing_settings.line_digits, token.line_number, m_listing_settings.addr_digits, addr, line.len, line.begin);
 	}
 
 	if (!hlt_found)
 	{
-		m_program.push (static_cast <stack_value_t> (ByteCode::hlt));
 		listing ("%*s %0*X [auto healt]\n", m_listing_settings.line_digits, "", m_listing_settings.addr_digits, m_program.bytes ());
+		m_program.push (ByteCode::hlt);
 	}
 
 	m_program.shrink ();
@@ -369,16 +371,16 @@ void Assembler::listing (const char* format, ...)
 
 	va_list args = {};
 	va_start (args, format);
-	size_t buffsize = vsnprintf (nullptr, 0, format, args) + 1;
+	size_t len = vsnprintf (nullptr, 0, format, args);
 	va_end (args);
 
-	char* str = new char[buffsize];
+	char* str = new char[len+1];
 
 	va_start (args, format);
-	vsprintf_s (str, buffsize, format, args);
+	vsprintf_s (str, len+1, format, args);
 	va_end (args);
 
-	m_listing_stream -> write (str, buffsize-1);
+	m_listing_stream -> write (str, len);
 	delete[] (str);
 }
 
@@ -396,77 +398,6 @@ assembler_error::assembler_error (const char* format, ...):
 assembler_error::assembler_error (const std::string& string):
 	exception_message (string)
 {}
-
-//------------------------------
-
-std::string Disassemble (const program_t& program)
-{
-	#define NEXT_VALUE_(var) 										 \
-	if (index >= size) 												 \
-	{																 \
-		fprintf (stderr, "Disassembling error: Invalid argument\n"); \
-		throw assembler_error ("Invalid argument"); 				 \
-	}																 \
-	stack_value_t var = program[index]; index++;					 
-
-	#define NEXT_NUMBER_(var)								   \
-	double var = .0;										   \
-	{														   \
-		NEXT_VALUE_ (value);								   \
-		var = static_cast <double> (value) / NUMBERS_MODIFIER; \
-	}
-
-	std::string source;
-
-	size_t index = 0;
-	size_t size  = program.size ();
-
-	NEXT_VALUE_ (version);
-	if (version != ASSEMBLER_VERSION)
-	{
-		fprintf (stderr, "Wrong assembler version\n");
-		throw assembler_error ("Wrong assembler version (%d), version %d is required", version, ASSEMBLER_VERSION);
-	}
-
-	while (index < size)
-	{
-
-		NEXT_VALUE_ (value);
-		ByteCode cmd = static_cast <ByteCode> (value);
-		
-		const char* strcmd = ByteCodeToStr (cmd);
-		if (!strcmd) 
-		{
-			throw assembler_error ("Unknown command code 0x%04X", cmd);
-		}
-
-		source += strcmd;
-		source += ' ';
-				
-		switch (cmd)
-		{
-			case ByteCode::man:
-			{
-				NEXT_VALUE_ (mancmd);
-				source += ByteCodeToStr (static_cast <ByteCode> (mancmd));
-				source += ' ';
-
-				break;
-			}
-
-			default:
-			{
-				#define ACD_(cmd, args, desc, ...) case ByteCode::##cmd: { if (args.size () > 0) { for (size_t i = 0; i < args.size (); i++) { NEXT_NUMBER_ (number); source += std::to_string (number) + ' '; }} break; };
-				switch (cmd) { COMMANDS_DEFINES_ }
-				#undef ACD_
-			}
-		}
-
-		source += '\n';
-	}
-
-	return source;
-}
 
 //------------------------------
 

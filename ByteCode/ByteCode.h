@@ -12,14 +12,14 @@
 //------------------------------
 
 typedef unsigned __int32            stack_value_t;
+typedef unsigned __int8             byte_t;
 typedef std::vector <stack_value_t> program_t;
-typedef char                        byte_t;
 
 //------------------------------
 
 #define ACD_(cmd, argc, desc, ...) cmd,
 
-enum class ByteCode
+enum class ByteCode: byte_t
 {
 	COMMANDS_DEFINES_
 
