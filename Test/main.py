@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
-from PyQt5.QtCore    import QFile, Qt
-import darktheme
+from PyQt5.QtCore    import QFile, Qt, QTextStream
+import qdarktheme
 
 #===================================
 
@@ -34,13 +34,11 @@ class Application:
     def __init__ (self):
         self.app = QApplication ([])
 
-        self.app.setStyleSheet (darktheme.stylesheet)
-        #self.app.setPalette    (darktheme.palette   )
-        self.app.setStyle      (darktheme.style     )
+        self.init_theme ()
 
         self.window = QWidget ()
         self.window.setWindowTitle ("Assembler editor")
-        self.window.resize (1000, 800)
+        self.window.resize (1000, 500)
 
         self.layout = QGridLayout ()
 
@@ -60,9 +58,14 @@ class Application:
 
 #===================================
 
+    def init_theme (self):
+        self.app.setStyleSheet (qdarktheme.load_stylesheet ())
+
+#===================================
+
     def init_interface (self):
         self.code_editor = QTextEdit ()
-        self.code_editor.setFixedSize (800, 750)
+        self.code_editor.setFixedSize (800, 450)
         self.code_editor.setPlaceholderText ("// Processor code")
         self.layout.addWidget (self.code_editor, 0, 0)
 
@@ -97,21 +100,24 @@ class Application:
         self.layout.addWidget (self.tool_group, 0, 1)
         
         self.description_textbox = QTextEdit ()
-        self.description_textbox.setFixedSize (800, 25)
+        self.description_textbox.setFixedSize (800, 30)
+        self.description_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.description_textbox.setPlaceholderText ("Instruction description")
         self.layout.addWidget (self.description_textbox, 1, 0)
 
         self.arguments_textbox = QTextEdit ()
-        self.arguments_textbox.setFixedSize (800, 25)
+        self.arguments_textbox.setFixedSize (800, 30)
+        self.arguments_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.arguments_textbox.setPlaceholderText ("Required arguments")
         self.layout.addWidget (self.arguments_textbox, 2, 0)
 
         self.file_path_textbox = QTextEdit ()
-        self.file_path_textbox.setFixedSize (800, 25)
+        self.file_path_textbox.setFixedSize (800, 30)
+        self.file_path_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.layout.addWidget (self.file_path_textbox, 3, 0)
 
         self.browse_button = QPushButton ("Browse...")
-        self.browse_button.setFixedSize (200, 25)
+        self.browse_button.setFixedSize (200, 30)
         self.browse_button.clicked.connect (self.on_click_browse)
         self.layout.addWidget (self.browse_button, 3, 1)
 
