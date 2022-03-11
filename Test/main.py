@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import QFile, Qt, QTextStream
-import qdarktheme
+import qdarktheme, traceback, os.path, json, io, re
 
 #===================================
 
@@ -29,16 +29,15 @@ class AssemblerInstruction ():
 
 #===================================
 
-class Application:
+class MainWindow (QWidget):
 
-    def __init__ (self):
+    def __init__ (self, parent = None):
         self.app = QApplication ([])
-
         self.init_theme ()
 
-        self.window = QWidget ()
-        self.window.setWindowTitle ("Assembler editor")
-        self.window.resize (1000, 500)
+        super ().__init__ (parent)
+        self.setWindowTitle ("Assembler editor")
+        self.resize         (1000, 500)
 
         self.layout = QGridLayout ()
 
@@ -48,8 +47,11 @@ class Application:
         self.selected_instruction = None
         self.on_select_item (None)
 
-        self.window.setLayout (self.layout)
-        self.window.show ()
+        self.setLayout (self.layout)
+        self.show ()
+
+        if self.set_path ("test.h"):
+            self.load (self.file_path_textbox.text ())
 
 #===================================
 
@@ -65,7 +67,7 @@ class Application:
 
     def init_interface (self):
         self.code_editor = QTextEdit ()
-        self.code_editor.setFixedSize (800, 450)
+        self.code_editor.setMinimumSize (800, 450)
         self.code_editor.setPlaceholderText ("// Processor code")
         self.layout.addWidget (self.code_editor, 0, 0)
 
@@ -92,6 +94,10 @@ class Application:
         self.rename_button.clicked.connect (self.on_ckick_rename)
         self.tool_layout.addWidget (self.rename_button, 5, 0)
 
+        self.clear_button = QPushButton ("Clear")
+        self.clear_button.clicked.connect (self.on_click_clear)
+        self.tool_layout.addWidget (self.clear_button, 6, 0)
+
         self.instructions_list = QListWidget ()
         self.instructions_list.itemActivated.connect (self.on_select_item)
         self.tool_layout.addWidget (self.instructions_list, 2, 0)
@@ -100,41 +106,48 @@ class Application:
         self.layout.addWidget (self.tool_group, 0, 1)
         
         self.description_textbox = QTextEdit ()
-        self.description_textbox.setFixedSize (800, 30)
+        self.description_textbox.setMinimumSize (800, 30)
         self.description_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.description_textbox.setPlaceholderText ("Instruction description")
         self.layout.addWidget (self.description_textbox, 1, 0)
 
         self.arguments_textbox = QTextEdit ()
-        self.arguments_textbox.setFixedSize (800, 30)
+        self.arguments_textbox.setMinimumSize (800, 30)
         self.arguments_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.arguments_textbox.setPlaceholderText ("Required arguments")
         self.layout.addWidget (self.arguments_textbox, 2, 0)
 
-        self.file_path_textbox = QTextEdit ()
-        self.file_path_textbox.setFixedSize (800, 30)
-        self.file_path_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.file_path_textbox = QLineEdit ()
+        self.file_path_textbox.setMinimumSize (800, 30)
+        self.file_path_textbox.setPlaceholderText ("Filename")
+        self.file_path_textbox.setDisabled (True)
         self.layout.addWidget (self.file_path_textbox, 3, 0)
 
         self.browse_button = QPushButton ("Browse...")
-        self.browse_button.setFixedSize (200, 30)
+        self.browse_button.setMinimumSize (200, 30)
         self.browse_button.clicked.connect (self.on_click_browse)
         self.layout.addWidget (self.browse_button, 3, 1)
 
 #===================================
 
     def on_ckick_save (self):
-        QMessageBox.about (self.window, "Sosi chlen", "Save button pressed")
+        if not len (self.file_path_textbox.text ()):
+            self.on_click_browse ()
+
+        self.save (self.file_path_textbox.text ())
     
     def on_click_load (self):
-        QMessageBox.about (self.window, "Sosi govno", "Load button pressed")
+        if not len (self.file_path_textbox.text ()):
+            self.on_click_browse ()
+
+        self.load (self.file_path_textbox.text ())
 
     def on_click_new (self):
-        text, result = QInputDialog.getText (self.window, "New instruction", "Enter instruction name:")
+        text, result = QInputDialog.getText (self, "New instruction", "Enter instruction name:")
         if not result:
             return
 
-        self.add_instruction (text)
+        self.create_instruction (text)
 
     def on_click_remove (self):
         if self.selected_instruction:
@@ -144,24 +157,39 @@ class Application:
 
     def on_ckick_rename (self):
         if self.selected_instruction:
-            text, result = QInputDialog.getText (self.window, "Rename", f"Enter new name for '{self.selected_instruction.name}':")
+            text, result = QInputDialog.getText (self, "Rename", f"Enter new name for '{self.selected_instruction.name}':")
             if not result:
                 return
+
+            def fail (text: str):
+                QMessageBox.about (self, "Can't rename instruction", text)
+
+            if not len (text):
+                fail ("Name is empty")
+                return
+
+            for item in self.instructions:
+                if item.name == text:
+                    fail (f"Instruction '{text}' already exists")
+                    return
 
             self.selected_instruction.name = text
             self.selected_instruction.list_item.setText (text)
 
     def on_click_browse (self):
-        filename, _ = QFileDialog.getOpenFileName (self.window, "Select file", "", "All files (*)", options = QFileDialog.Options ())
-        self.file_path_textbox.setText (filename)
+        path, result = QFileDialog.getOpenFileName (self, "Select file", "", "All files (*)", options = QFileDialog.Options ())
+        if result:
+            self.set_path (path)
+
+    def on_click_clear (self):
+        self.instructions.clear      ()
+        self.instructions_list.clear ()
+        self.on_select_item (None)
 
 #===================================
    
     def on_select_item (self, item):
-        if self.selected_instruction != None:
-            self.selected_instruction.code = self.code_editor.toPlainText         ()
-            self.selected_instruction.desc = self.description_textbox.toPlainText ()
-            self.selected_instruction.args = self.arguments_textbox.toPlainText   ()
+        self.save_changes ()
 
         if item != None:
             for instruction in self.instructions:
@@ -183,14 +211,66 @@ class Application:
 
 #===================================
 
-    def load (self):
-        pass
+    def save_changes (self):
+        if self.selected_instruction != None:
+            self.selected_instruction.code = self.code_editor.toPlainText         ()
+            self.selected_instruction.desc = self.description_textbox.toPlainText ()
+            self.selected_instruction.args = self.arguments_textbox.toPlainText   ()
 
 #===================================
 
-    def add_instruction (self, name: str):
+    def save (self, filename):
+        self.save_changes ()
+
+        data = {}
+
+        data['header_filename'] = filename
+        data['instructions'] = []
+
+        for instruction in self.instructions:
+            data['instructions'].append ({'name': instruction.name, 'desc': instruction.desc, 'args': instruction.args, 'code': instruction.code})
+
+        with open (filename + "_info.json", 'w') as file:
+            json.dump (data, file, indent = 4)
+            file.close ()
+
+        with open (filename, 'w') as file:
+            file.write (self.generate_source ())
+            file.close ()
+
+        print (f"Saved to {filename}")
+
+#===================================
+
+    def load (self, filename):
+        with open (filename + "_info.json", 'r') as file:
+            data = json.load (file)
+            file.close ()
+
+        self.instructions_list.clear ()
+        self.instructions.clear      ()
+
+        self.on_select_item (None)
+        for instruction in data['instructions']:
+            self.add_instruction (AssemblerInstruction (instruction['name'], instruction['args'], instruction['desc'], instruction['code']))
+
+        print (f"Loaded from {filename}")
+
+#===================================
+
+    def set_path (self, path):
+        if not os.path.isfile (path):
+            QMessageBox.critical (self, "File not found", f"File {path} does not exist or is directory")
+            return False
+
+        self.file_path_textbox.setText (path)
+        return True
+
+#===================================
+
+    def create_instruction (self, name: str):
         def fail (text: str):
-            QMessageBox.about (self.window, "Can't add instruction", text)
+            QMessageBox.about (self, "Can't add instruction", text)
 
         if not len (name):
             fail ("Name is empty")
@@ -201,8 +281,11 @@ class Application:
                 fail (f"Instruction '{name}' already exists")
                 return
 
-        instruction = AssemblerInstruction (name, "", "", "")
+        self.add_instruction (AssemblerInstruction (name, "", "", ""))
 
+#===================================
+
+    def add_instruction (self, instruction: AssemblerInstruction):
         self.instructions.append (instruction)
         self.instructions_list.addItem        (instruction.list_item)
         self.instructions_list.setCurrentItem (instruction.list_item)
@@ -210,7 +293,39 @@ class Application:
 
 #===================================
 
-app = Application ()
+    def generate_source (self) -> str:
+        source = io.StringIO ()
+
+        delimiter = '//------------------------------\n'
+
+        source.write ("#pragma once\n")
+        source.write ("\n");
+        source.write (delimiter)
+        source.write ("\n")
+        source.write ("#define TOKENS_(args) std::initializer_list <TokenType> (args)\n")
+        source.write ("\n")
+        source.write ("#define COMMANDS_DEFINES_ \\ \n")
+
+        for instruction in self.instructions:
+            tokens = ["TokenType::" + token for token in re.split (" |,|;|\n", instruction.args)]
+            
+            args = ""
+            for token in tokens:
+                args += token + ", "
+
+            source.write ("ACD_ ( {0: <6}, TOKENS_ ({{ {1: <30} }}), {2: <100}, {{ {3: <200} }}) \\ \n".format (instruction.name, args, instruction.desc, instruction.code.replace ('\n', ' ')))
+
+        source.write ("\n")
+        source.write (delimiter)
+
+        string = source.getvalue ()
+        source.close ()
+
+        return string
+        
+#===================================
+
+app = MainWindow ()
 app.start ()
 
 #===================================

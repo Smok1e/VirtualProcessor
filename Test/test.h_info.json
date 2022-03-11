@@ -1,0 +1,29 @@
+{
+    "header_filename": "test.h",
+    "instructions": [
+        {
+            "name": "push",
+            "desc": "push - push value to stack",
+            "args": "numeric",
+            "code": "push (nextStackValue ());"
+        },
+        {
+            "name": "pop",
+            "desc": "pop - pop value from stack",
+            "args": "",
+            "code": "pop ();"
+        },
+        {
+            "name": "add",
+            "desc": "add - sum 2 top values",
+            "args": "",
+            "code": "double rgt = popNumber ();\ndouble lft = popNumber ();\n\npush (lft + rgt);"
+        },
+        {
+            "name": "man",
+            "desc": "man <command> - print command manual",
+            "args": "keyword, test",
+            "code": "output (\"%s\\n\", CommandManual (nextInstruction ()));"
+        }
+    ]
+}
