@@ -1,3 +1,4 @@
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import QFile, Qt, QTextStream
@@ -50,7 +51,7 @@ class MainWindow (QWidget):
         self.setLayout (self.layout)
         self.show ()
 
-        if self.set_path ("test.h"):
+        if self.set_path ("../ByteCode/Commands.h"):
             self.load (self.file_path_textbox.text ())
 
 #===================================
@@ -66,9 +67,14 @@ class MainWindow (QWidget):
 #===================================
 
     def init_interface (self):
+        font = QFont ('cascadia mono')
+        font.setPointSize (12)
+
         self.code_editor = QTextEdit ()
         self.code_editor.setMinimumSize (800, 450)
         self.code_editor.setPlaceholderText ("// Processor code")
+        self.code_editor.setFont (font)
+        self.code_editor.setTabStopDistance (QFontMetricsF (font).horizontalAdvance (' ') * 4)
         self.layout.addWidget (self.code_editor, 0, 0)
 
         self.tool_group = QGroupBox ("Instructions")
@@ -106,25 +112,28 @@ class MainWindow (QWidget):
         self.layout.addWidget (self.tool_group, 0, 1)
         
         self.description_textbox = QTextEdit ()
-        self.description_textbox.setMinimumSize (800, 30)
+        self.description_textbox.setMinimumSize (800, 40)
         self.description_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.description_textbox.setPlaceholderText ("Instruction description")
+        self.description_textbox.setFont (font)
         self.layout.addWidget (self.description_textbox, 1, 0)
 
         self.arguments_textbox = QTextEdit ()
-        self.arguments_textbox.setMinimumSize (800, 30)
+        self.arguments_textbox.setMinimumSize (800, 40)
         self.arguments_textbox.setVerticalScrollBarPolicy (Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.arguments_textbox.setPlaceholderText ("Required arguments")
+        self.arguments_textbox.setFont (font)
         self.layout.addWidget (self.arguments_textbox, 2, 0)
 
         self.file_path_textbox = QLineEdit ()
-        self.file_path_textbox.setMinimumSize (800, 30)
+        self.file_path_textbox.setMinimumSize (800, 40)
         self.file_path_textbox.setPlaceholderText ("Filename")
         self.file_path_textbox.setDisabled (True)
+        self.file_path_textbox.setFont (font)
         self.layout.addWidget (self.file_path_textbox, 3, 0)
 
         self.browse_button = QPushButton ("Browse...")
-        self.browse_button.setMinimumSize (200, 30)
+        self.browse_button.setMinimumSize (200, 40)
         self.browse_button.clicked.connect (self.on_click_browse)
         self.layout.addWidget (self.browse_button, 3, 1)
 
@@ -151,9 +160,9 @@ class MainWindow (QWidget):
 
     def on_click_remove (self):
         if self.selected_instruction:
-            self.instructions.remove                (self.selected_instruction)
-            self.instructions_list.removeItemWidget (self.selected_instruction.list_item)
-            self.on_select_item (None)
+            self.instructions.remove        (self.selected_instruction)
+            self.instructions_list.takeItem (self.instructions_list.row (self.selected_instruction.list_item))
+            self.on_select_item             (None)
 
     def on_ckick_rename (self):
         if self.selected_instruction:
@@ -205,6 +214,8 @@ class MainWindow (QWidget):
                     self.arguments_textbox.setDisabled   (False)
 
         else: 
+            self.selected_instruction = None
+
             self.code_editor.setDisabled         (True)
             self.description_textbox.setDisabled (True)
             self.arguments_textbox.setDisabled   (True)
@@ -230,7 +241,7 @@ class MainWindow (QWidget):
         for instruction in self.instructions:
             data['instructions'].append ({'name': instruction.name, 'desc': instruction.desc, 'args': instruction.args, 'code': instruction.code})
 
-        with open (filename + "_info.json", 'w') as file:
+        with open (filename + ".json", 'w') as file:
             json.dump (data, file, indent = 4)
             file.close ()
 
@@ -243,7 +254,7 @@ class MainWindow (QWidget):
 #===================================
 
     def load (self, filename):
-        with open (filename + "_info.json", 'r') as file:
+        with open (filename + ".json", 'r') as file:
             data = json.load (file)
             file.close ()
 
@@ -298,22 +309,42 @@ class MainWindow (QWidget):
 
         delimiter = '//------------------------------\n'
 
+        source.write ("//-----------------------------------------//\n")
+        source.write ("// This header was generated automatically //\n")
+        source.write ("//-----------------------------------------//\n")
+        source.write ("\n")
         source.write ("#pragma once\n")
         source.write ("\n");
         source.write (delimiter)
         source.write ("\n")
         source.write ("#define TOKENS_(args) std::initializer_list <TokenType> (args)\n")
         source.write ("\n")
-        source.write ("#define COMMANDS_DEFINES_ \\ \n")
+        source.write ("#define COMMANDS_DEFINES_ \\\n")
+
+        max_name_len = 0
+        max_args_len = 0
+        max_desc_len = 0
+        max_code_len = 0
 
         for instruction in self.instructions:
-            tokens = ["TokenType::" + token for token in re.split (" |,|;|\n", instruction.args)]
-            
-            args = ""
-            for token in tokens:
-                args += token + ", "
+            args = ', '.join (["TokenType::" + token for token in instruction.args.split (';')]) if len (instruction.args) else ""
+            code = instruction.code.replace ('\n', ' ').replace ('\t', ' ')
 
-            source.write ("ACD_ ( {0: <6}, TOKENS_ ({{ {1: <30} }}), {2: <100}, {{ {3: <200} }}) \\ \n".format (instruction.name, args, instruction.desc, instruction.code.replace ('\n', ' ')))
+            name_len = len (instruction.name)
+            args_len = len (args)
+            desc_len = len (instruction.desc)
+            code_len = len (code)
+
+            if name_len > max_name_len: max_name_len = name_len
+            if args_len > max_args_len: max_args_len = args_len
+            if desc_len > max_desc_len: max_desc_len = desc_len
+            if code_len > max_code_len: max_code_len = code_len
+
+        for instruction in self.instructions:
+            args = ', '.join (["TokenType::" + token for token in instruction.args.split (';')]) if len (instruction.args) else ""
+            code = instruction.code.replace ('\n', ' ').replace ('\t', ' ')
+
+            source.write ("ACD_ ( {0: <{1}}, TOKENS_ ({{{2: <{3}}}}), \"{4: <{5}}\", {{ {6: <{7}} }}) \\\n".format (instruction.name, max_name_len, args, max_args_len, instruction.desc, max_desc_len, code, max_code_len))
 
         source.write ("\n")
         source.write (delimiter)
