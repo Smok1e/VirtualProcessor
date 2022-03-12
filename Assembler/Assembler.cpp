@@ -406,14 +406,31 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 		m_listing_stream -> put (' ');
 	}
 
-	for (size_t i = 0; i < content_size; i++)
+	listing ("0x%0*X ", m_listing_settings.addr_digits, addr);
+
+	for (size_t i = 0; i < content_size && i < m_listing_settings.cont_bytes; i++)
 		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
 
 	if (content_size < m_listing_settings.cont_bytes)
 		for (size_t i = 0; i < m_listing_settings.cont_bytes - content_size; i++)
 			listing ("   ");
 
-	listing ("0x%0*X %.*s\n", m_listing_settings.addr_digits, addr, len, message);
+	size_t bytes_remaining = (content_size > m_listing_settings.cont_bytes)? content_size - m_listing_settings.cont_bytes: 0;
+
+	listing ("%.*s", len, message);
+
+	for (size_t i = m_listing_settings.cont_bytes, l = m_listing_settings.cont_bytes; i < m_listing_settings.cont_bytes + bytes_remaining; i++, l++)
+	{
+		if (l >= m_listing_settings.cont_bytes)
+		{
+			l = 0;
+			listing ("\n%*s ", m_listing_settings.line_digits, "");
+		}
+
+		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
+	}
+
+	listing ("\n");
 }
 
 //------------------------------

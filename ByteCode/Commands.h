@@ -6,7 +6,7 @@
 
 //------------------------------
 
-#define TOKENS_(args) std::initializer_list <TokenType> (args)
+#define TOKENS_(...) std::initializer_list <TokenType> (__VA_ARGS__)
 
 #define COMMANDS_DEFINES_ \
 ACD_ ( push, TOKENS_ ({TokenType::numeric}), "push <number> - push number value to stack       ", { push (nextStackValue ());                                                                                                                                         }) \

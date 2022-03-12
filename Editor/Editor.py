@@ -317,7 +317,7 @@ class MainWindow (QWidget):
         source.write ("\n");
         source.write (delimiter)
         source.write ("\n")
-        source.write ("#define TOKENS_(args) std::initializer_list <TokenType> (args)\n")
+        source.write ("#define TOKENS_(...) std::initializer_list <TokenType> (__VA_ARGS__)\n")
         source.write ("\n")
         source.write ("#define COMMANDS_DEFINES_ \\\n")
 
