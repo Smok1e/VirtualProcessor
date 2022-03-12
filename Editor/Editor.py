@@ -329,10 +329,11 @@ class MainWindow (QWidget):
         for instruction in self.instructions:
             args = ', '.join (["TokenType::" + token for token in instruction.args.split (';')]) if len (instruction.args) else ""
             code = instruction.code.replace ('\n', ' ').replace ('\t', ' ')
+            desc = f"\"{instruction.desc}\""
 
             name_len = len (instruction.name)
             args_len = len (args)
-            desc_len = len (instruction.desc)
+            desc_len = len (desc)
             code_len = len (code)
 
             if name_len > max_name_len: max_name_len = name_len
@@ -343,8 +344,9 @@ class MainWindow (QWidget):
         for instruction in self.instructions:
             args = ', '.join (["TokenType::" + token for token in instruction.args.split (';')]) if len (instruction.args) else ""
             code = instruction.code.replace ('\n', ' ').replace ('\t', ' ')
+            desc = f"\"{instruction.desc}\""
 
-            source.write ("ACD_ ( {0: <{1}}, TOKENS_ ({{{2: <{3}}}}), \"{4: <{5}}\", {{ {6: <{7}} }}) \\\n".format (instruction.name, max_name_len, args, max_args_len, instruction.desc, max_desc_len, code, max_code_len))
+            source.write ("ACD_ ( {0: <{1}}, TOKENS_ ({{{2: <{3}}}}), {4: <{5}}, {{ {6: <{7}} }}) \\\n".format (instruction.name, max_name_len, args, max_args_len, desc, max_desc_len, code, max_code_len))
 
         source.write ("\n")
         source.write (delimiter)
