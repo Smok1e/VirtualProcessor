@@ -19,7 +19,11 @@ int main ()
 			"add                    \n"
 			"push 5  >Test comment! \n"
 			"mul     >Meow          \n"
-			"ret                    \n";
+			"in                     \n"
+			"div                    \n"
+			"out                    \n"
+			"man hlp                \n"
+			"hlp                    \n";
 
 		Assembler assembler;
 		assembler.setListingStream (&listing);
