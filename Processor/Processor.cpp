@@ -149,115 +149,22 @@ stack_value_t Processor::nextStackValue ()
 
 void Processor::processInstruction (ByteCode cmd)
 {
+	#define ACD_(instruction, args, descr, ...) case ByteCode::##instruction: { __VA_ARGS__; break; }
+
 	switch (cmd)
 	{
-		case ByteCode::push:
-		{
-			m_stack.push (nextStackValue ());
-			break;
-		}
-
-		case ByteCode::pop:
-		{
-			m_stack.pop ();
-			break;
-		}
-
-		case ByteCode::add:
-		{
-			double rgt = popNumber ();
-			double lft = popNumber ();
-
-			push (lft + rgt);
-			break;
-		}
-
-		case ByteCode::sub:
-		{
-			double rgt = popNumber ();
-			double lft = popNumber ();
-
-			push (lft - rgt);	
-			break;
-		}
-
-		case ByteCode::mul:
-		{
-			double rgt = popNumber ();
-			double lft = popNumber ();
-
-			push (lft * rgt);
-			break;
-		}
-
-		case ByteCode::div:
-		{
-			double rgt = popNumber ();
-			double lft = popNumber ();
-
-			if (lft == 0)
-			{
-				error ("Fatal error: Zero division");
-				throw processor_error ("Zero division");
-			}
-
-			push (lft / rgt);			
-			break;
-		}
-
-		case ByteCode::in:
-		{
-			output ("Enter value: ");
-
-			std::string in = input ();
-			push (std::stod (in));
-			break;
-		}
-
-		case ByteCode::out:
-		{
-			output ("%lf\n", popNumber ());
-			break;
-		}
-
-		case ByteCode::hlt:
-		{
-			break;
-		}
-
-		case ByteCode::ver:
-		{
-			push (static_cast <double> (ASSEMBLER_VERSION));
-			break;
-		}
-
-		case ByteCode::hlp:
-		{
-			output ("Commands reference:\n");
-			for (size_t i = ByteCodesBegin; i < ByteCodesAmount; i++)
-				output ("%s\n", CommandManual (static_cast <ByteCode> (i)));
-
-			break;
-		}
-
-		case ByteCode::man:
-		{
-			output ("%s\n", CommandManual (nextInstruction ()));
-			break;
-		}
-
-		case ByteCode::ret:
-		{
-			m_retval = popNumber ();
-			break;
-		}
+		COMMANDS_DEFINES_
 
 		default:
 		{
 			error ("Fatal error: Unknown instruction 0x%02X\n", cmd);
-			throw processor_error ("Unknown instruction 0x%02X", cmd);
+			throw processor_error ("Unknown instruction 0x%02X\n", cmd);
+
+			break;
 		}
 	}
+
+	#undef ACD_
 }
 
 //------------------------------
@@ -298,6 +205,18 @@ ByteCode Processor::popInstruction ()
 double Processor::popNumber ()
 {
 	return static_cast <double> (popValue ()) / NUMBERS_MODIFIER;
+}
+
+void Processor::pop ()
+{
+	popValue ();
+}
+
+//------------------------------
+
+void Processor::setReturnValue (double retval)
+{
+	m_retval = retval;
 }
 
 //------------------------------

@@ -1,0 +1,83 @@
+{
+    "header_filename": "../ByteCode/Commands.h",
+    "instructions": [
+        {
+            "name": "push",
+            "desc": "push <number> - push number value to stack",
+            "args": "numeric",
+            "code": "push (nextStackValue ());"
+        },
+        {
+            "name": "pop",
+            "desc": "pop - pop value from stack",
+            "args": "",
+            "code": "pop ();"
+        },
+        {
+            "name": "add",
+            "desc": "add - sum 2 top stack values",
+            "args": "",
+            "code": "double rgt = popNumber (); \ndouble lft = popNumber (); \n\npush (lft + rgt);"
+        },
+        {
+            "name": "sub",
+            "desc": "sub - subtract 2 top stack values",
+            "args": "",
+            "code": "double rgt = popNumber (); \ndouble lft = popNumber (); \n\npush (lft - rgt);"
+        },
+        {
+            "name": "mul",
+            "desc": "mul - multiply 2 top stack values",
+            "args": "",
+            "code": "double rgt = popNumber (); \ndouble lft = popNumber (); \n\npush (lft * rgt);"
+        },
+        {
+            "name": "div",
+            "desc": "div - divide 2 top stack values",
+            "args": "",
+            "code": "double rgt = popNumber (); \ndouble lft = popNumber (); \n\nif (rgt == 0)\n{\n\terror (\"Zero division\");\n\tthrow processor_error (\"Zero division\");\n}\n\npush (lft / rgt);"
+        },
+        {
+            "name": "in",
+            "desc": "in - push number value from program input",
+            "args": "",
+            "code": "output (\"Enter value: \");\npush (std::stod (input ()));"
+        },
+        {
+            "name": "out",
+            "desc": "out - pop and print number value",
+            "args": "",
+            "code": "output (\"%lf\\n\", popNumber ());"
+        },
+        {
+            "name": "hlt",
+            "desc": "hlt - halt program",
+            "args": "",
+            "code": ""
+        },
+        {
+            "name": "ver",
+            "desc": "ver - push assembler version to stack",
+            "args": "",
+            "code": "push (static_cast <double> (ASSEMBLER_VERSION));"
+        },
+        {
+            "name": "man",
+            "desc": "man <command> - print command manual",
+            "args": "keyword",
+            "code": "output (\"%s\\n\", CommandManual (nextInstruction ()));"
+        },
+        {
+            "name": "hlp",
+            "desc": "hlp - print commands reference",
+            "args": "",
+            "code": "output (\"Commands reference:\\n\");\nfor (size_t i = ByteCodesBegin; i < ByteCodesAmount; i++)\n\toutput (\"%s\\n\", CommandManual (static_cast <ByteCode> (i)));"
+        },
+        {
+            "name": "ret",
+            "desc": "ret - set top stack value as program return value",
+            "args": "",
+            "code": "setReturnValue (popNumber ());"
+        }
+    ]
+}

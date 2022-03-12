@@ -75,8 +75,11 @@ private:
 	stack_value_t popValue       ();
 	ByteCode      popInstruction ();
 	double        popNumber      ();
+	void          pop            ();
 
 	void processInstruction (ByteCode cmd);
+
+	void setReturnValue (double retval);
 };
 
 //------------------------------
