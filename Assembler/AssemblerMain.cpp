@@ -14,16 +14,7 @@ int main ()
 	try
 	{
 		const char* source =
-			"push 4                 \n"
-			"push 10                \n"
-			"add                    \n"
-			"push 5  >Test comment! \n"
-			"mul     >Meow          \n"
-			"in                     \n"
-			"div                    \n"
-			"out                    \n"
-			"man hlp                \n"
-			"hlp                    \n";
+			"test push \n";
 
 		Assembler assembler;
 		assembler.setListingStream (&listing);

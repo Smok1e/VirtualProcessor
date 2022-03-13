@@ -14,8 +14,8 @@ class AssemblerInstruction ():
 
     def __init__ (self):
         self.name = "untitled"
-        self.args = ""
         self.code = ""
+        self.args = ""
         self.desc = ""
 
         self.list_item = QListWidgetItem (self.name)
@@ -23,10 +23,15 @@ class AssemblerInstruction ():
     def __init__ (self, name: str, args: str, desc: str, code: str):
         self.name = name
         self.args = args
-        self.code = code
         self.desc = desc
+        self.code = code
 
         self.list_item = QListWidgetItem (self.name)
+
+    def format_name (self) -> str: return self.name + ','
+    def format_args (self) -> str: return ', '.join (["TokenType::" + token for token in self.args.split (';')]) if len (self.args) else ""
+    def format_code (self) -> str: return self.code.replace ('\n', ' ').replace ('\t', '')
+    def format_desc (self) -> str: return f"\"{self.desc}\","
 
 #===================================
 
@@ -327,14 +332,10 @@ class MainWindow (QWidget):
         max_code_len = 0
 
         for instruction in self.instructions:
-            args = ', '.join (["TokenType::" + token for token in instruction.args.split (';')]) if len (instruction.args) else ""
-            code = instruction.code.replace ('\n', ' ').replace ('\t', ' ')
-            desc = f"\"{instruction.desc}\""
-
-            name_len = len (instruction.name)
-            args_len = len (args)
-            desc_len = len (desc)
-            code_len = len (code)
+            name_len = len (instruction.format_name ())
+            args_len = len (instruction.format_args ())
+            desc_len = len (instruction.format_desc ())
+            code_len = len (instruction.format_code ())
 
             if name_len > max_name_len: max_name_len = name_len
             if args_len > max_args_len: max_args_len = args_len
@@ -342,11 +343,12 @@ class MainWindow (QWidget):
             if code_len > max_code_len: max_code_len = code_len
 
         for instruction in self.instructions:
-            args = ', '.join (["TokenType::" + token for token in instruction.args.split (';')]) if len (instruction.args) else ""
-            code = instruction.code.replace ('\n', ' ').replace ('\t', ' ')
-            desc = f"\"{instruction.desc}\""
-
-            source.write ("ACD_ ( {0: <{1}}, TOKENS_ ({{{2: <{3}}}}), {4: <{5}}, {{ {6: <{7}} }}) \\\n".format (instruction.name, max_name_len, args, max_args_len, desc, max_desc_len, code, max_code_len))
+            source.write ("ACD_ ({0: <{1}} TOKENS_ ({{{2: <{3}}}}), {4: <{5}} {{ {6: <{7}} }}) \\\n".format (
+                instruction.format_name (), max_name_len, 
+                instruction.format_args (), max_args_len, 
+                instruction.format_desc (), max_desc_len, 
+                instruction.format_code (), max_code_len
+            ))
 
         source.write ("\n")
         source.write (delimiter)

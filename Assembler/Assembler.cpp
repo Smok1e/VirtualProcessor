@@ -9,8 +9,14 @@
 #pragma warning (disable: 4018)
 
 //------------------------------
-//                                                       line digits, addr digits, content bytes
-Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = {3,           4,           6            };
+
+Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = 
+{
+	3, // line digits
+	4, // address digits
+	6, // content bytes per line
+	1  // content bytes count digits
+};
 
 //------------------------------
 
@@ -393,6 +399,9 @@ void Assembler::listing (const char* format, ...)
 
 void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, size_t content_size, const char* message, int len /*= -1*/)
 {
+	// Listing format:
+	// [line] [absolute address] [bytes count] [data bytes] [source line]
+
 	if (len < 0) len = strlen (message);
 	
 	if (line >= 0) 
@@ -406,7 +415,7 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 		m_listing_stream -> put (' ');
 	}
 
-	listing ("0x%0*X ", m_listing_settings.addr_digits, addr);
+	listing ("0x%0*X %0*zu ", m_listing_settings.addr_digits, addr, m_listing_settings.cont_bytes_count_digits, content_size);
 
 	for (size_t i = 0; i < content_size && i < m_listing_settings.cont_bytes; i++)
 		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));

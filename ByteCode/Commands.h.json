@@ -78,6 +78,12 @@
             "desc": "ret - set top stack value as program return value",
             "args": "",
             "code": "setReturnValue (popNumber ());"
+        },
+        {
+            "name": "test",
+            "desc": "test - test command",
+            "args": "keyword",
+            "code": "output (\"123\\n\");"
         }
     ]
 }
