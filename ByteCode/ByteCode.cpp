@@ -9,10 +9,14 @@
 const unsigned ByteCodesBegin  = static_cast <unsigned> (ByteCode::reserved) + 1;
 const unsigned ByteCodesAmount = static_cast <unsigned> (ByteCode::amount  ) - 1;
 
-const char*    CODE_DELIMITERS      = " \r\t";
-const char*    LINE_DELIMITERS      = "\n";
-const char*    COMMENT_SEQUENCE     = ">";
-const unsigned COMMENT_SEQUENCE_LEN = strlen (COMMENT_SEQUENCE);
+const char*    CODE_DELIMITERS       = " \r\t";
+const char*    LINE_DELIMITERS       = "\n";
+
+const char*    COMMENT_SEQUENCE      = ">";
+const unsigned COMMENT_SEQUENCE_LEN  = strlen (COMMENT_SEQUENCE);
+
+const char*    REGISTER_SEQUENCE     = "@";
+const unsigned REGISTER_SEQUENCE_LEN = strlen (REGISTER_SEQUENCE);
 
 //------------------------------
 

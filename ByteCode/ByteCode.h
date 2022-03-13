@@ -56,6 +56,8 @@ extern const char*            CODE_DELIMITERS;
 extern const char*            LINE_DELIMITERS;
 extern const char*            COMMENT_SEQUENCE;
 extern const unsigned         COMMENT_SEQUENCE_LEN;
+extern const char*            REGISTER_SEQUENCE;
+extern const unsigned         REGISTER_SEQUENCE_LEN;
 //     const unsigned         NUMBERS_ACURACY               = 3;
        const unsigned         NUMBERS_MODIFIER	            = 256;
        const unsigned         ASSEMBLER_VERSION             = 13;

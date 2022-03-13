@@ -294,6 +294,12 @@ TokenType Assembler::determineTokenType (const char* begin, const char* end)
 	if (std::isdigit (*begin))
 		return TokenType::Numeric;
 
+	if (strchr (LINE_DELIMITERS, *begin))
+		return TokenType::Newline;
+
+	if (strncmp (begin, REGISTER_SEQUENCE, REGISTER_SEQUENCE_LEN) == 0)
+		return TokenType::Register;
+
 	return TokenType::Keyword;
 }
 
@@ -320,6 +326,13 @@ stack_value_t Assembler::interpretCommandToken (const char* str, size_t len)
 
 //------------------------------
 
+stack_value_t Assembler::interpretRegisterToken (const char* str, size_t len)
+{
+	return static_cast <stack_value_t> (0xDEADC0DE);
+}
+
+//------------------------------
+
 Assembler::source_code_container::token Assembler::interptetToken (const char* begin, const char* end, size_t number, size_t line_number)
 {
 	source_code_container::token token = {};
@@ -340,6 +353,10 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 			token.value = interpretNumberToken (begin, token.len);
 			break;
 
+		case TokenType::Register:
+			token.value = interpretRegisterToken (begin, token.len);
+			break;
+
 		default:
 			assembler_assert ("Unknown token type" && false);
 			break;
@@ -356,9 +373,10 @@ const char* Assembler::StrTokenType (TokenType type)
 
 	switch (type)
 	{
-		TRANSLATE_ (Keyword);
-		TRANSLATE_ (Numeric);
-		TRANSLATE_ (Newline);
+		TRANSLATE_ (Keyword );
+		TRANSLATE_ (Numeric );
+		TRANSLATE_ (Newline );
+		TRANSLATE_ (Register);
 
 		default: break;
 	}
@@ -409,20 +427,24 @@ Assembler::source_code_container::token& Assembler::nextToken (TokenType type)
 
 //------------------------------
 
-void Assembler::test ()
+void Assembler::dumpTokens ()
 {
 	printf ("Tokens count: %zu\n", m_source_code.tokens_count);
 	for (size_t i = 0; i < m_source_code.tokens_count; i++)
 	{
 		const source_code_container::token& token = m_source_code.tokens[i];
 
-		printf ("Token #%zu:\n",     token.number             );
-		printf ("  text: '%.*s'\n",  token.len, token.begin   );
-		printf ("  len: %zu\n",      token.len                );
-		printf ("  line: %zu\n",     token.line_number        );
-		printf ("  type: %s\n",      StrTokenType (token.type));
-		printf ("  value: 0x%08X\n", token.value              );
-		printf ("\n");
+		printf 
+		(
+			"#%03zu: text: %-10.*s | len: %-2zu | line: %-2zu | type: %-10s | value: 0x%08X\n", 
+			token.number, 
+			token.len, 
+			token.begin, 
+			token.len, 
+			token.line_number, 
+			StrTokenType (token.type), 
+			token.value
+		);
 	}
 }
 

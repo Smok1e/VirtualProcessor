@@ -56,8 +56,8 @@ public:
 	void          setListingStream (std::ostream* stream);
 	std::ostream* getListingStream ();
 
-	void assemble ();
-	void test     ();
+	void assemble   ();
+	void dumpTokens ();
 
 private:
 	ProgramContainer m_program;
@@ -100,10 +100,11 @@ private:
 
 	listing_settings m_listing_settings;
 
-	TokenType                    determineTokenType    (const char* begin, const char* end);
-	stack_value_t                interpretNumberToken  (const char* begin, size_t len);
-	stack_value_t                interpretCommandToken (const char* begin, size_t len);
-	source_code_container::token interptetToken        (const char* begin, const char* end, size_t number, size_t line_number);
+	TokenType                    determineTokenType     (const char* begin, const char* end);
+	stack_value_t                interpretNumberToken   (const char* begin, size_t len);
+	stack_value_t                interpretCommandToken  (const char* begin, size_t len);
+	stack_value_t                interpretRegisterToken (const char* begin, size_t len);
+	source_code_container::token interptetToken         (const char* begin, const char* end, size_t number, size_t line_number);
 
 	static const char* StrTokenType (TokenType type);
 
