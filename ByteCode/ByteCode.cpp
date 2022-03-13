@@ -53,6 +53,24 @@ const char* CommandManual (ByteCode code)
 
 //------------------------------
 
+int RegisterIndex (const char* begin, size_t len)
+{
+	const char* register_begin        = begin;
+	const char* register_end_sequence = register_begin + 1;
+
+	if (*register_end_sequence != 'x')
+		return -1;
+
+	int register_index = *register_begin - 'a';
+
+	if (register_index < 0 || register_index >= REGISTERS_COUNT)
+		return -1;
+
+	return register_index;
+}
+
+//------------------------------
+
 TokenType operator | (TokenType lft, TokenType rgt)
 {
 	return static_cast <TokenType> (static_cast <token_base_t> (lft) | static_cast <token_base_t> (rgt));

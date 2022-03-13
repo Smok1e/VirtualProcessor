@@ -58,13 +58,13 @@ extern const char*            COMMENT_SEQUENCE;
 extern const unsigned         COMMENT_SEQUENCE_LEN;
 extern const char*            REGISTER_SEQUENCE;
 extern const unsigned         REGISTER_SEQUENCE_LEN;
-//     const unsigned         NUMBERS_ACURACY               = 3;
-       const unsigned         NUMBERS_MODIFIER	            = 256;
-       const unsigned         ASSEMBLER_VERSION             = 13;
-       const unsigned         ASSEMBLER_BUFFSIZE            = 1024;
-       const unsigned __int32 PROGRAM_SIGNATURE             = TXT232UINT ("Meow");
-       const unsigned         LISTING_LINE_NUMBER_LENGTH    = 3;
-       const unsigned         LISTING_ADDRESS_NUMBER_LENGTH = 4;
+
+//     const unsigned         NUMBERS_ACURACY    = 3;
+       const unsigned         NUMBERS_MODIFIER	 = 256;
+       const unsigned         ASSEMBLER_VERSION  = 13;
+       const unsigned         ASSEMBLER_BUFFSIZE = 1024;
+       const unsigned __int32 PROGRAM_SIGNATURE  = TXT232UINT ("Meow");
+	   const unsigned __int8  REGISTERS_COUNT    = 4;
 
 //------------------------------
 
@@ -81,6 +81,10 @@ struct program_header
 ByteCode    TranslateToByteCode (const char* str);
 const char* ByteCodeToStr       (ByteCode code);
 const char* CommandManual       (ByteCode code);
+
+int RegisterIndex (const char* begin, size_t len);
+
+//------------------------------
 
 TokenType operator | (TokenType lft, TokenType rgt);
 TokenType operator & (TokenType lft, TokenType rgt);

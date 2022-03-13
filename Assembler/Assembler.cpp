@@ -220,7 +220,7 @@ void Assembler::tokenize ()
 	Newline.begin = "$";
 	Newline.end   = Newline.begin + 1;
 	Newline.len   = 1;
-	Newline.value = 0xDEFEC8ED;
+	Newline.value = 0xDEADFA11;
 
 	size_t current_line_number = 0, current_token_number = 0;
 	for (const char* line_begin = m_source_code.begin, *line_end = Assembler_strpbrk (line_begin, LINE_DELIMITERS); line_end; line_begin = line_end+1, line_end = Assembler_strpbrk (line_begin, LINE_DELIMITERS), current_line_number++)
@@ -328,7 +328,26 @@ stack_value_t Assembler::interpretCommandToken (const char* str, size_t len)
 
 stack_value_t Assembler::interpretRegisterToken (const char* str, size_t len)
 {
-	return static_cast <stack_value_t> (0xDEADC0DE);
+	// Register token: "@[abcd]x"
+
+	if (len != (2 + REGISTER_SEQUENCE_LEN))
+		throw assembler_error ("Syntax error: Invalid register '%.*s' len - %zu", len, str, len);
+
+	const char* register_begin_sequence = str;
+	const char* register_identifier     = str + REGISTER_SEQUENCE_LEN;
+	const char* register_end_character  = str + REGISTER_SEQUENCE_LEN + 1;
+
+	if (strncmp (register_begin_sequence, REGISTER_SEQUENCE, REGISTER_SEQUENCE_LEN) != 0) 
+		throw assembler_error ("Syntax error: Invalid register '%.*s' begin sequence - '%.*s'", len, str, register_begin_sequence, REGISTER_SEQUENCE_LEN);
+
+	if (*register_end_character != 'x')
+		throw assembler_error ("Syntax error: Invalid register '%.*s' end character - %c", len, str, *register_end_character);
+
+	int index = RegisterIndex (register_identifier, len - REGISTER_SEQUENCE_LEN);
+	if (index == -1)
+		throw assembler_error ("Syntax error: Invalid register '%.*s'", len, str);
+
+	return static_cast <stack_value_t> (index);
 }
 
 //------------------------------
