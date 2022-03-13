@@ -156,7 +156,7 @@
     <ClInclude Include="Assembler.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="source.asm" />
+    <None Include="source.mcasm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

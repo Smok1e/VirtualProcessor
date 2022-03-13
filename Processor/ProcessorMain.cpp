@@ -6,6 +6,7 @@
 
 int main ()
 {
+
 	try
 	{
 		ProgramContainer program;
@@ -16,7 +17,7 @@ int main ()
 		processor.setProgram (program);
 
 		double retval = processor.run ();
-		printf ("Return value: %lf\n", retval);	
+		printf ("\nReturn value: %lf\n", retval);	
 	}
 
 	catch (processor_error err)

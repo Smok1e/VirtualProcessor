@@ -57,12 +57,13 @@ enum class ByteCode: byte_t
 typedef byte_t token_base_t;
 enum class TokenType: token_base_t
 {
-	None     = 0b00000000,
+	None     = 0b00000001,
+	Keyword  = 0b00000010,
+	Numeric  = 0b00000100,
+	Register = 0b00001000,
+	Newline  = 0b00010000,
 
-	Keyword  = 0b00000001,
-	Numeric  = 0b00000010,
-	Register = 0b00000100,
-	Newline  = 0b00001000
+	Any      = 0b11111111
 };
 
 //------------------------------
@@ -81,7 +82,7 @@ extern const unsigned         REGISTER_SEQUENCE_LEN;
 
 //     const unsigned         NUMBERS_ACURACY    = 3;
        const unsigned         NUMBERS_MODIFIER	 = 256;
-       const unsigned         ASSEMBLER_VERSION  = 14;
+       const unsigned         ASSEMBLER_VERSION  = 15;
        const unsigned         ASSEMBLER_BUFFSIZE = 1024;
        const unsigned __int32 PROGRAM_SIGNATURE  = TXT232UINT ("Meow");
 	   const unsigned __int8  REGISTERS_COUNT    = 4;
@@ -102,7 +103,8 @@ ByteCode    TranslateToByteCode (const char* str);
 const char* ByteCodeToStr       (ByteCode code);
 const char* CommandManual       (ByteCode code);
 
-int RegisterIndex (const char* begin, size_t len);
+int         RegisterIndex    (const char* begin, size_t len);
+const char* StrRegisterIndex (size_t index);
 
 bool IsSingleTokenType (TokenType type);
 

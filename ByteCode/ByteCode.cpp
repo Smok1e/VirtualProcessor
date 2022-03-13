@@ -71,6 +71,16 @@ int RegisterIndex (const char* begin, size_t len)
 
 //------------------------------
 
+const char* StrRegisterIndex (size_t index)
+{
+	static char buffer[ASSEMBLER_BUFFSIZE] = "";
+	sprintf_s (buffer, "%s%cx", REGISTER_SEQUENCE, 'a' + index);
+
+	return buffer;
+}
+
+//------------------------------
+
 bool IsSingleTokenType (TokenType type)
 {
 	return IsOnly1BitSet (static_cast <token_base_t> (type));

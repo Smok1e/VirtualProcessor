@@ -15,7 +15,7 @@ int main ()
 	{
 		Assembler assembler;
 		assembler.setListingStream (&listing);
-		assembler.loadSourceCode   ("source.asm");
+		assembler.loadSourceCode   ("source.mcasm");
 
 		//assembler.dumpTokens ();
 

@@ -16,7 +16,7 @@ Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS =
 	4,    // address digits
 	6,    // content bytes per line
 	1,    // content bytes count digits
-	true  // print content as binary
+	false // print content as binary
 };
 
 //------------------------------

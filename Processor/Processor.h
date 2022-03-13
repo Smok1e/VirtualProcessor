@@ -60,25 +60,38 @@ private:
 	
 	double m_retval;
 
+	stack_value_t m_registers[REGISTERS_COUNT];
+
+	// IO
 	void print (std::ostream* stream, const char* format, va_list args);
 
-	template <typename value_t> 
-	value_t nextValue ();
+	// Program data
+	template <typename value_t> value_t nextValue ();
+	ByteCode                            nextInstruction ();
+	stack_value_t                       nextStackValue  ();
+	TokenType                           nextArgType     ();
+	byte_t                              nextByte        ();
 
-	ByteCode      nextInstruction ();
-	stack_value_t nextStackValue  ();
-
-	void push (stack_value_t value );
-	void push (ByteCode      cmd   );
-	void push (double        number);
-
+	// Stack
+	void          push           (stack_value_t value );
+	void          push           (ByteCode      cmd   );
+	void          push           (double        number);
 	stack_value_t popValue       ();
 	ByteCode      popInstruction ();
 	double        popNumber      ();
 	void          pop            ();
+	stack_value_t top            ();
 
+	// Registers
+	void          regSet            (size_t index, stack_value_t value );
+	void          regSet            (size_t index, ByteCode      cmd   );
+	void          regSet            (size_t index, double        number);
+	stack_value_t regGetStackValue  (size_t index);
+	ByteCode      regGetInstruction (size_t index);
+	double        regGetNumber      (size_t index);
+
+	// Other
 	void processInstruction (ByteCode cmd);
-
 	void setReturnValue (double retval);
 };
 
