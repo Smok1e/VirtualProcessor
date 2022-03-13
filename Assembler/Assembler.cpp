@@ -12,10 +12,11 @@
 
 Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = 
 {
-	3, // line digits
-	4, // address digits
-	6, // content bytes per line
-	1  // content bytes count digits
+	3,    // line digits
+	4,    // address digits
+	6,    // content bytes per line
+	1,    // content bytes count digits
+	false // print content as binary
 };
 
 //------------------------------
@@ -39,8 +40,11 @@ Assembler::~Assembler ()
 
 void Assembler::setSourceCode (const char* source)
 {
-	m_source_code.begin = source;
-	m_source_code.len   = strlen (source);
+	releaseTokens ();
+
+	m_source_code.begin    = source;
+	m_source_code.len      = strlen (source);
+	m_source_code.filename = "Loaded from string";
 
 	tokenize ();
 }
@@ -48,6 +52,42 @@ void Assembler::setSourceCode (const char* source)
 const char* Assembler::getSourceCode ()
 {
 	return m_source_code.begin;
+}
+
+//------------------------------
+
+void Assembler::loadSourceCode (const char* filename)
+{
+	releaseTokens ();
+
+	FILE* file = nullptr;
+	errno_t err = fopen_s (&file, filename, "rb");
+
+	if (!file || err)
+	{
+		static char errbuff[ASSEMBLER_BUFFSIZE] = "";
+		strerror_s (errbuff, err);
+
+		throw assembler_error (errbuff);
+	}
+
+	fseek (file, 0, SEEK_END);
+	size_t len = ftell (file);
+	
+	m_source_code.loaded_source = new char[len+2];
+
+	fseek (file, 0, SEEK_SET);
+	fread (m_source_code.loaded_source, 1, len, file);
+	m_source_code.loaded_source[len  ] = '\n';
+	m_source_code.loaded_source[len+1] = '\0';
+
+	fclose (file);
+
+	m_source_code.filename = filename;
+	m_source_code.begin    = m_source_code.loaded_source;
+	m_source_code.len      = len+1;
+
+	tokenize ();
 }
 
 //------------------------------
@@ -92,6 +132,9 @@ Assembler::listing_settings Assembler::getListingSettings ()
 
 void Assembler::assemble ()
 {
+	if (!m_source_code.tokens)
+		throw assembler_error ("No source to complie");
+
 	m_program.clear ();
 
 	m_program.append (static_cast <stack_value_t> (ASSEMBLER_VERSION));
@@ -102,49 +145,40 @@ void Assembler::assemble ()
 	{
 		size_t prev_addr = m_program.bytes ();
 
-		source_code_container::token token = nextToken  (TokenType::keyword);
-		ByteCode                     cmd   = toByteCode (token.value);
+		source_code_container::token token = nextToken (TokenType::Keyword | TokenType::Newline);
+		source_code_container::line  line  = m_source_code.lines[token.line_number];
 
-		source_code_container::line line = m_source_code.lines[token.line_number];
-		
-		if (cmd >= ByteCode::amount)
-			throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
-
-		m_program.append (cmd);
-
-		#define ACD_(command, args, desc) case ByteCode::command:      \
-		{														       \
-			for (auto& argtype: args)							       \
-			{													       \
-				stack_value_t value = nextToken (argtype).value;       \
-				if (argtype == TokenType::keyword)				       \
-					m_program.append (static_cast <ByteCode> (value)); \
-																       \
-				else m_program.append (value);					       \
-			}													       \
-																       \
-			break;                                                     \
-		}
-		switch (cmd)
+		if (token.type == TokenType::Keyword)
 		{
-			COMMANDS_DEFINES_
+			ByteCode cmd = toByteCode (token.value);
 
-			default:
-				break;
+			if (cmd >= ByteCode::amount)
+				throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
+
+			m_program.append (cmd);
+
+			#define ACD_(command, args, desc, ...) case ByteCode::##command: { compileInstruction (args); break; };
+			switch (cmd)
+			{
+				COMMANDS_DEFINES_
+
+				default:
+					break;
+			}
+			#undef ACD_
+
+			switch (cmd)
+			{
+				case ByteCode::hlt:
+					hlt_found = true;
+					break;
+
+				default: 
+					break;
+			}
+
+			nextToken (TokenType::Newline);
 		}
-		#undef ACD_
-
-		switch (cmd)
-		{
-			case ByteCode::hlt:
-				hlt_found = true;
-				break;
-
-			default: 
-				break;
-		}
-
-		nextToken (TokenType::newline);
 
 		listing_line (line.number, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, line.begin, line.len);
 	}
@@ -170,12 +204,12 @@ void Assembler::tokenize ()
 	std::vector <source_code_container::line > tmp_lines_buff;
 	std::vector <source_code_container::token> tmp_tokens_buff;
 
-	static source_code_container::token newline = {};
-	newline.type  = TokenType::newline;
-	newline.begin = "$";
-	newline.end   = newline.begin + 1;
-	newline.len   = 1;
-	newline.value = 0xDEFEC8ED;
+	static source_code_container::token Newline = {};
+	Newline.type  = TokenType::Newline;
+	Newline.begin = "$";
+	Newline.end   = Newline.begin + 1;
+	Newline.len   = 1;
+	Newline.value = 0xDEADFA11;
 
 	size_t current_line_number = 0, current_token_number = 0;
 	for (const char* line_begin = m_source_code.begin, *line_end = Assembler_strpbrk (line_begin, LINE_DELIMITERS); line_end; line_begin = line_end+1, line_end = Assembler_strpbrk (line_begin, LINE_DELIMITERS), current_line_number++)
@@ -200,9 +234,9 @@ void Assembler::tokenize ()
 
 		tmp_lines_buff.push_back (current_line);
 
-		newline.number      = current_token_number;
-		newline.line_number = current_line_number;
-		tmp_tokens_buff.push_back (newline);
+		Newline.number      = current_token_number;
+		Newline.line_number = current_line_number;
+		tmp_tokens_buff.push_back (Newline);
 
 		current_token_number++;
 	}
@@ -224,6 +258,9 @@ void Assembler::releaseTokens ()
 {
 	if (!m_source_code.lines) return;
 
+	if (m_source_code.loaded_source)
+		delete[] (m_source_code.loaded_source);
+
 	delete[] (m_source_code.lines );
 	delete[] (m_source_code.tokens);
 
@@ -235,13 +272,24 @@ void Assembler::releaseTokens ()
 
 	m_source_code.begin = nullptr;
 	m_source_code.len   = 0;
+
+	m_source_code.loaded_source = nullptr;
 }
 
 //------------------------------
 
 TokenType Assembler::determineTokenType (const char* begin, const char* end)
 {
-	return std::isdigit (*begin)? TokenType::numeric: TokenType::keyword;
+	if (std::isdigit (*begin))
+		return TokenType::Numeric;
+
+	if (strchr (LINE_DELIMITERS, *begin))
+		return TokenType::Newline;
+
+	if (strncmp (begin, REGISTER_SEQUENCE, REGISTER_SEQUENCE_LEN) == 0)
+		return TokenType::Register;
+
+	return TokenType::Keyword;
 }
 
 //------------------------------
@@ -267,6 +315,32 @@ stack_value_t Assembler::interpretCommandToken (const char* str, size_t len)
 
 //------------------------------
 
+stack_value_t Assembler::interpretRegisterToken (const char* str, size_t len)
+{
+	// Register token: "@[abcd]x"
+
+	if (len != (2 + REGISTER_SEQUENCE_LEN))
+		throw assembler_error ("Syntax error: Invalid register '%.*s' len - %zu", len, str, len);
+
+	const char* register_begin_sequence = str;
+	const char* register_identifier     = str + REGISTER_SEQUENCE_LEN;
+	const char* register_end_character  = str + REGISTER_SEQUENCE_LEN + 1;
+
+	if (strncmp (register_begin_sequence, REGISTER_SEQUENCE, REGISTER_SEQUENCE_LEN) != 0) 
+		throw assembler_error ("Syntax error: Invalid register '%.*s' begin sequence - '%.*s'", len, str, register_begin_sequence, REGISTER_SEQUENCE_LEN);
+
+	if (*register_end_character != 'x')
+		throw assembler_error ("Syntax error: Invalid register '%.*s' end character - %c", len, str, *register_end_character);
+
+	int index = RegisterIndex (register_identifier, len - REGISTER_SEQUENCE_LEN);
+	if (index == -1)
+		throw assembler_error ("Syntax error: Invalid register '%.*s'", len, str);
+
+	return static_cast <stack_value_t> (index);
+}
+
+//------------------------------
+
 Assembler::source_code_container::token Assembler::interptetToken (const char* begin, const char* end, size_t number, size_t line_number)
 {
 	source_code_container::token token = {};
@@ -279,12 +353,16 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 	switch (token.type)
 	{
-		case TokenType::keyword:
+		case TokenType::Keyword:
 			token.value = interpretCommandToken (begin, token.len);
 			break;
 
-		case TokenType::numeric:
+		case TokenType::Numeric:
 			token.value = interpretNumberToken (begin, token.len);
+			break;
+
+		case TokenType::Register:
+			token.value = interpretRegisterToken (begin, token.len);
 			break;
 
 		default:
@@ -297,15 +375,51 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 //------------------------------
 
+void Assembler::compileInstruction (const std::initializer_list <TokenType>& args)
+{
+	// Сперва проверяем тип каждого аргумента, и, если он имеет несколько возможных значений,
+	// добавляем в программу информацию типе [следующего за инструкцией токена].
+	// Подробная справка - в файле ByteCode.h
+
+	for (const auto& argtype: args)
+		if (!IsSingleTokenType (argtype)) 
+			m_program.append (followingToken (argtype).type);
+
+	for (const auto& argtype: args)
+	{
+		source_code_container::token token = nextToken (argtype);
+		switch (token.type)
+		{
+			case TokenType::Keyword:
+				m_program.append (static_cast <ByteCode> (token.value));
+				break;
+
+			case TokenType::Numeric:
+				m_program.append (token.value);
+				break;
+
+			case TokenType::Register:
+				m_program.append (static_cast <byte_t> (token.value));
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+//------------------------------
+
 const char* Assembler::StrTokenType (TokenType type)
 {
 	#define TRANSLATE_(type) case TokenType::##type: { return #type; break; }
 
 	switch (type)
 	{
-		TRANSLATE_ (keyword);
-		TRANSLATE_ (numeric);
-		TRANSLATE_ (newline);
+		TRANSLATE_ (Keyword );
+		TRANSLATE_ (Numeric );
+		TRANSLATE_ (Newline );
+		TRANSLATE_ (Register);
 
 		default: break;
 	}
@@ -331,24 +445,27 @@ ByteCode Assembler::toByteCode (stack_value_t value)
 
 //------------------------------
 
-Assembler::source_code_container::token& Assembler::nextToken ()
+Assembler::source_code_container::token Assembler::followingToken ()
 {
+	static source_code_container::token none_token = {};
+	none_token.begin       = "None";
+	none_token.end         = none_token.begin + strlen (none_token.begin);
+	none_token.len         = none_token.end - none_token.begin;
+	none_token.line_number = 0;
+	none_token.number      = 0;
+	none_token.type        = TokenType::None;
+	none_token.value       = 0x8BADC0DE;
+
 	if (m_next_token_index >= m_source_code.tokens_count)
-		throw assembler_error ("Failed to get next token");
+		return none_token;
 
-	source_code_container::token& token = m_source_code.tokens[m_next_token_index];
-	m_next_token_index++;
-
-	return token;
+	return m_source_code.tokens[m_next_token_index];
 }
 
-//------------------------------
-
-Assembler::source_code_container::token& Assembler::nextToken (TokenType type)
+Assembler::source_code_container::token Assembler::followingToken (TokenType type)
 {
-	source_code_container::token token = nextToken ();
-
-	if (token.type != type)
+	source_code_container::token token = followingToken ();
+	if (!static_cast <bool> (token.type & type))
 		throw assembler_error ("Expected %s, got %s", StrTokenType (type), StrTokenType (token.type));
 
 	return token;
@@ -356,20 +473,44 @@ Assembler::source_code_container::token& Assembler::nextToken (TokenType type)
 
 //------------------------------
 
-void Assembler::test ()
+Assembler::source_code_container::token Assembler::nextToken ()
+{
+	source_code_container::token token = followingToken ();
+	m_next_token_index++;
+
+	return token;
+}
+
+//------------------------------
+
+Assembler::source_code_container::token Assembler::nextToken (TokenType type)
+{
+	source_code_container::token token = followingToken (type);
+	m_next_token_index++;
+
+	return token;
+}
+
+//------------------------------
+
+void Assembler::dumpTokens ()
 {
 	printf ("Tokens count: %zu\n", m_source_code.tokens_count);
 	for (size_t i = 0; i < m_source_code.tokens_count; i++)
 	{
 		const source_code_container::token& token = m_source_code.tokens[i];
 
-		printf ("Token #%zu:\n",     token.number             );
-		printf ("  text: '%.*s'\n",  token.len, token.begin   );
-		printf ("  len: %zu\n",      token.len                );
-		printf ("  line: %zu\n",     token.line_number        );
-		printf ("  type: %s\n",      StrTokenType (token.type));
-		printf ("  value: 0x%08X\n", token.value              );
-		printf ("\n");
+		printf 
+		(
+			"#%03zu: text: %-10.*s | len: %-2zu | line: %-2zu | type: %-10s | value: 0x%08X\n", 
+			token.number, 
+			token.len, 
+			token.begin, 
+			token.len, 
+			token.line_number, 
+			StrTokenType (token.type), 
+			token.value
+		);
 	}
 }
 
@@ -416,13 +557,20 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 	}
 
 	listing ("0x%0*X %0*zu ", m_listing_settings.addr_digits, addr, m_listing_settings.cont_bytes_count_digits, content_size);
+	
+	#define PRINT_CONT_BYTE_(index)																					 \
+	{																												 \
+		unsigned char byte = *static_cast <unsigned char*> (content_begin + index);									 \
+		if (m_listing_settings.cont_print_binary) listing (PRINTF_BINARY_PATTERN " ", PRINTF_BYTE_TO_BINARY (byte)); \
+		else                                      listing ("%02X ",                                          byte ); \
+	}
 
 	for (size_t i = 0; i < content_size && i < m_listing_settings.cont_bytes; i++)
-		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
+		PRINT_CONT_BYTE_ (i);
 
 	if (content_size < m_listing_settings.cont_bytes)
 		for (size_t i = 0; i < m_listing_settings.cont_bytes - content_size; i++)
-			listing ("   ");
+			listing ("%*s", (m_listing_settings.cont_print_binary? 8: 2) + 1, "");
 
 	size_t bytes_remaining = (content_size > m_listing_settings.cont_bytes)? content_size - m_listing_settings.cont_bytes: 0;
 
@@ -436,10 +584,12 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 			listing ("\n%*s ", m_listing_settings.line_digits, "");
 		}
 
-		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
+		PRINT_CONT_BYTE_ (i);
 	}
 
 	listing ("\n");
+
+	#undef PRINT_CONT_BYTE_
 }
 
 //------------------------------

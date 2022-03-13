@@ -15,7 +15,9 @@ Processor::Processor ():
 
 	m_next_data_index (0),
 
-	m_retval (0)
+	m_retval (0),
+
+	m_registers {}
 {}
 
 //------------------------------
@@ -50,8 +52,14 @@ void Processor::defaultIO ()
 
 std::string Processor::input ()
 {
+	if (!m_stream_in)
+	{
+		error ("Warning: Input stream not set, but program trying to read input\n");
+		return "";
+	}
+
 	std::string in;
-	std::cin >> in;
+	*m_stream_in >> in;
 	return in;
 }
 
@@ -145,6 +153,16 @@ stack_value_t Processor::nextStackValue ()
 	return nextValue <stack_value_t> ();
 }
 
+TokenType Processor::nextArgType ()
+{
+	return nextValue <TokenType> ();
+}
+
+byte_t Processor::nextByte ()
+{
+	return nextValue <byte_t> ();
+}
+
 //------------------------------
 
 void Processor::processInstruction (ByteCode cmd)
@@ -210,6 +228,59 @@ double Processor::popNumber ()
 void Processor::pop ()
 {
 	popValue ();
+}
+
+//------------------------------
+
+stack_value_t Processor::top ()
+{
+	return m_stack.top ();
+}
+
+//------------------------------
+
+void Processor::regSet (size_t index, stack_value_t value)
+{
+	if (index >= REGISTERS_COUNT)
+	{
+		error ("Fatal error: Invalid register index 0x%02X\n", index);
+		throw processor_error ("Invalid register index 0x%02X", index);
+	}
+
+	m_registers[index] = value;
+}
+
+void Processor::regSet (size_t index, ByteCode cmd)
+{
+	regSet (index, static_cast <stack_value_t> (cmd));
+}
+
+void Processor::regSet (size_t index, double number)
+{
+	regSet (index, static_cast <stack_value_t> (floor (number * NUMBERS_MODIFIER)));
+}
+
+//------------------------------
+
+stack_value_t Processor::regGetStackValue (size_t index)
+{
+	if (index >= REGISTERS_COUNT)
+	{
+		error ("Fatal error: Invalid register index 0x%02X\n", index);
+		throw processor_error ("Invalid register index 0x%02X", index);
+	}
+
+	return m_registers[index];
+}
+
+ByteCode Processor::regGetInstruction (size_t index)
+{
+	return static_cast <ByteCode> (regGetStackValue (index));
+}
+
+double Processor::regGetNumber (size_t index)
+{
+	return static_cast <double> (regGetStackValue (index)) / NUMBERS_MODIFIER;
 }
 
 //------------------------------

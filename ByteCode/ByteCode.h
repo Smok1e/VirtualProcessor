@@ -16,6 +16,27 @@ typedef unsigned __int8             byte_t;
 typedef std::vector <stack_value_t> program_t;
 
 //------------------------------
+/*
+
+Структура скомпилированной инструкции:
+Идентификатор инструкции (ByteCode, или 1 байт в настоящий момент)
+Далее, для каждого аргумента инструкции, который имеет несколько возможных типов (например ACD_ (push, TOKENS_ ({TokenType::Numeric | TokenType::Register}), ...))
+в программе следует по 1 байту, который определяет тип того токена, который следует в программе за инструкцией. И так для каждого аргумента. Важно, что если 
+аргумент имеет фиксированный тип, то сразу за инструкцией следуют значения аргументов.
+
+Программа понимает, что аргумент может быть разных типов, если в типе аргумента [больше одного бита имеет значение 1], поскольку [каждый тип аргумента занимает свой отдельный бит].
+
+После инструкции и информации о типах её аргументов, следуют значения аргументов (stack_value_t, или 4 байта в настоящий момент), если таковые имеются.
+
+В общей сложности инструкция имеет такой вид: 
+[идентификатор][типы аргументов][значения аргументов]
+
+Структура программы содержит последовательность из скомпилированных инструкций, формат которых описан выше. 
+В начале программы обязательно располагается версия ассемблера (stack_value_t или 4 байтовое беззнаковое число).
+В конце программы всегда находится инструкция hlt (без аргументов).
+
+*/
+//------------------------------
 
 #define ACD_(cmd, argc, desc, ...) cmd,
 
@@ -33,14 +54,16 @@ enum class ByteCode: byte_t
 
 //------------------------------
 
-enum class TokenType
+typedef byte_t token_base_t;
+enum class TokenType: token_base_t
 {
-	keyword,
-	numeric,
-	newline,
+	None     = 0b00000001,
+	Keyword  = 0b00000010,
+	Numeric  = 0b00000100,
+	Register = 0b00001000,
+	Newline  = 0b00010000,
 
-	amount,
-	none
+	Any      = 0b11111111
 };
 
 //------------------------------
@@ -54,13 +77,15 @@ extern const char*            CODE_DELIMITERS;
 extern const char*            LINE_DELIMITERS;
 extern const char*            COMMENT_SEQUENCE;
 extern const unsigned         COMMENT_SEQUENCE_LEN;
-//     const unsigned         NUMBERS_ACURACY               = 3;
-       const unsigned         NUMBERS_MODIFIER	            = 256;
-       const unsigned         ASSEMBLER_VERSION             = 13;
-       const unsigned         ASSEMBLER_BUFFSIZE            = 1024;
-       const unsigned __int32 PROGRAM_SIGNATURE             = TXT232UINT ("Meow");
-       const unsigned         LISTING_LINE_NUMBER_LENGTH    = 3;
-       const unsigned         LISTING_ADDRESS_NUMBER_LENGTH = 4;
+extern const char*            REGISTER_SEQUENCE;
+extern const unsigned         REGISTER_SEQUENCE_LEN;
+
+//     const unsigned         NUMBERS_ACURACY    = 3;
+       const unsigned         NUMBERS_MODIFIER	 = 256;
+       const unsigned         ASSEMBLER_VERSION  = 15;
+       const unsigned         ASSEMBLER_BUFFSIZE = 1024;
+       const unsigned __int32 PROGRAM_SIGNATURE  = TXT232UINT ("Meow");
+	   const unsigned __int8  REGISTERS_COUNT    = 4;
 
 //------------------------------
 
@@ -77,5 +102,15 @@ struct program_header
 ByteCode    TranslateToByteCode (const char* str);
 const char* ByteCodeToStr       (ByteCode code);
 const char* CommandManual       (ByteCode code);
+
+int         RegisterIndex    (const char* begin, size_t len);
+const char* StrRegisterIndex (size_t index);
+
+bool IsSingleTokenType (TokenType type);
+
+//------------------------------
+
+TokenType operator | (TokenType lft, TokenType rgt);
+TokenType operator & (TokenType lft, TokenType rgt);
 
 //------------------------------

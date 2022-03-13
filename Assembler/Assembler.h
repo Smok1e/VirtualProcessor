@@ -36,6 +36,7 @@ public:
 		unsigned __int8 addr_digits;
 		unsigned __int8 cont_bytes;
 		unsigned __int8 cont_bytes_count_digits;
+		bool            cont_print_binary;
 	};
 
 	Assembler ();
@@ -44,6 +45,8 @@ public:
 
 	void        setSourceCode (const char* source);
 	const char* getSourceCode ();
+
+	void loadSourceCode (const char* filename);
 
 	void                    setProgram (const ProgramContainer& program);
 	const ProgramContainer& getProgram ();
@@ -54,8 +57,8 @@ public:
 	void          setListingStream (std::ostream* stream);
 	std::ostream* getListingStream ();
 
-	void assemble ();
-	void test     ();
+	void assemble   ();
+	void dumpTokens ();
 
 private:
 	ProgramContainer m_program;
@@ -87,18 +90,24 @@ private:
 		const char* begin;
 		size_t      len;
 
-		line*        lines;
-		token*       tokens;
-		size_t       lines_count;
-		size_t       tokens_count;
+		line*  lines;
+		token* tokens;
+		size_t lines_count;
+		size_t tokens_count;
+
+		      char* loaded_source;
+		const char* filename;
 	} m_source_code;
 
 	listing_settings m_listing_settings;
 
-	TokenType                    determineTokenType    (const char* begin, const char* end);
-	stack_value_t                interpretNumberToken  (const char* begin, size_t len);
-	stack_value_t                interpretCommandToken (const char* begin, size_t len);
-	source_code_container::token interptetToken        (const char* begin, const char* end, size_t number, size_t line_number);
+	TokenType                    determineTokenType     (const char* begin, const char* end);
+	stack_value_t                interpretNumberToken   (const char* begin, size_t len);
+	stack_value_t                interpretCommandToken  (const char* begin, size_t len);
+	stack_value_t                interpretRegisterToken (const char* begin, size_t len);
+	source_code_container::token interptetToken         (const char* begin, const char* end, size_t number, size_t line_number);
+
+	void compileInstruction (const std::initializer_list <TokenType>& args);
 
 	static const char* StrTokenType (TokenType type);
 
@@ -108,8 +117,11 @@ private:
 	void tokenize      ();
 	void releaseTokens ();
 
-	source_code_container::token& nextToken ();
-	source_code_container::token& nextToken (TokenType type);
+	source_code_container::token followingToken ();
+	source_code_container::token followingToken (TokenType type);
+
+	source_code_container::token nextToken ();
+	source_code_container::token nextToken (TokenType type);
 
 	void listing      (const char* format, ...);
 	void listing_line (int line, uintptr_t addr, byte_t* content_begin, size_t content_size, const char* message, int len = -1);

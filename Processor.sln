@@ -11,8 +11,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ByteCode", "ByteCode\ByteCo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Stack", "Stack\Stack.vcxproj", "{0EDC1B98-1CD1-42CB-AFDC-CF0855F8880D}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Editor", "Editor\Editor.pyproj", "{23B134D1-F23D-4B63-B8C7-042F5396D7B7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,12 +69,6 @@ Global
 		{0EDC1B98-1CD1-42CB-AFDC-CF0855F8880D}.Release|x64.Build.0 = Release|x64
 		{0EDC1B98-1CD1-42CB-AFDC-CF0855F8880D}.Release|x86.ActiveCfg = Release|Win32
 		{0EDC1B98-1CD1-42CB-AFDC-CF0855F8880D}.Release|x86.Build.0 = Release|Win32
-		{23B134D1-F23D-4B63-B8C7-042F5396D7B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{23B134D1-F23D-4B63-B8C7-042F5396D7B7}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{23B134D1-F23D-4B63-B8C7-042F5396D7B7}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{23B134D1-F23D-4B63-B8C7-042F5396D7B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{23B134D1-F23D-4B63-B8C7-042F5396D7B7}.Release|x64.ActiveCfg = Release|Any CPU
-		{23B134D1-F23D-4B63-B8C7-042F5396D7B7}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
