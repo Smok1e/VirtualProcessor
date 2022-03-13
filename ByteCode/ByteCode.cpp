@@ -71,6 +71,13 @@ int RegisterIndex (const char* begin, size_t len)
 
 //------------------------------
 
+bool IsSingleTokenType (TokenType type)
+{
+	return IsOnly1BitSet (static_cast <token_base_t> (type));
+}
+
+//------------------------------
+
 TokenType operator | (TokenType lft, TokenType rgt)
 {
 	return static_cast <TokenType> (static_cast <token_base_t> (lft) | static_cast <token_base_t> (rgt));

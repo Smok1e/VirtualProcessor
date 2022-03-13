@@ -26,9 +26,17 @@ std::string Format        (const char* format, va_list args);
 //------------------------------
 
 template <typename T, size_t N>
-constexpr size_t _DoNotUseWithPointers_SizeArr (T (& /*arr*/) [N])
+inline constexpr size_t _DoNotUseWithPointers_SizeArr (T (& /*arr*/) [N])
 {
 	return N;
+}
+
+//------------------------------
+
+template <typename value_t>
+inline constexpr bool IsOnly1BitSet (value_t value)
+{
+	return (value & (value - 1)) == 0 && value != 0;
 }
 
 //------------------------------
