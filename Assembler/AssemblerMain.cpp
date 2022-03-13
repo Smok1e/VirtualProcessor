@@ -17,15 +17,15 @@ int main ()
 		assembler.setListingStream (&listing);
 		assembler.loadSourceCode   ("source.asm");
 
-		assembler.dumpTokens ();
+		//assembler.dumpTokens ();
 
-		//assembler.assemble         ();
+		assembler.assemble         ();
 
-		//assembler.getProgram ().save ("test.bin");
-		//printf ("Program saved as test.bin\n\n");
+		assembler.getProgram ().save ("test.bin");
+		printf ("Program saved as test.bin\n\n");
 
-		//printf ("Listing:\n");
-		//printf (listing.str ().c_str ());
+		printf ("Listing:\n");
+		printf (listing.str ().c_str ());
 	}
 
 	catch (assembler_error err)

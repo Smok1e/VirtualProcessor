@@ -36,6 +36,7 @@ public:
 		unsigned __int8 addr_digits;
 		unsigned __int8 cont_bytes;
 		unsigned __int8 cont_bytes_count_digits;
+		bool            cont_print_binary;
 	};
 
 	Assembler ();
@@ -106,6 +107,8 @@ private:
 	stack_value_t                interpretRegisterToken (const char* begin, size_t len);
 	source_code_container::token interptetToken         (const char* begin, const char* end, size_t number, size_t line_number);
 
+	void compileInstruction (const std::initializer_list <TokenType>& args);
+
 	static const char* StrTokenType (TokenType type);
 
 	double   toNumber   (stack_value_t value);
@@ -114,8 +117,11 @@ private:
 	void tokenize      ();
 	void releaseTokens ();
 
-	source_code_container::token& nextToken ();
-	source_code_container::token& nextToken (TokenType type);
+	source_code_container::token followingToken ();
+	source_code_container::token followingToken (TokenType type);
+
+	source_code_container::token nextToken ();
+	source_code_container::token nextToken (TokenType type);
 
 	void listing      (const char* format, ...);
 	void listing_line (int line, uintptr_t addr, byte_t* content_begin, size_t content_size, const char* message, int len = -1);

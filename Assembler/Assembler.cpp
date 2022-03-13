@@ -12,10 +12,11 @@
 
 Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS = 
 {
-	3, // line digits
-	4, // address digits
-	6, // content bytes per line
-	1  // content bytes count digits
+	3,    // line digits
+	4,    // address digits
+	6,    // content bytes per line
+	1,    // content bytes count digits
+	true  // print content as binary
 };
 
 //------------------------------
@@ -156,19 +157,7 @@ void Assembler::assemble ()
 
 			m_program.append (cmd);
 
-			#define ACD_(command, args, desc) case ByteCode::command:      \
-			{														       \
-				for (auto& argtype: args)							       \
-				{													       \
-					stack_value_t value = nextToken (argtype).value;       \
-					if (argtype == TokenType::Keyword)				       \
-						m_program.append (static_cast <ByteCode> (value)); \
-																		   \
-					else m_program.append (value);					       \
-				}													       \
-																		   \
-				break;                                                     \
-			}
+			#define ACD_(command, args, desc, ...) case ByteCode::##command: { compileInstruction (args); break; };
 			switch (cmd)
 			{
 				COMMANDS_DEFINES_
@@ -386,6 +375,41 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 //------------------------------
 
+void Assembler::compileInstruction (const std::initializer_list <TokenType>& args)
+{
+	// Сперва проверяем тип каждого аргумента, и, если он имеет несколько возможных значений,
+	// добавляем в программу информацию типе [следующего за инструкцией токена].
+	// Подробная справка - в файле ByteCode.h
+
+	for (const auto& argtype: args)
+		if (!IsSingleTokenType (argtype)) 
+			m_program.append (followingToken (argtype).type);
+
+	for (const auto& argtype: args)
+	{
+		source_code_container::token token = nextToken (argtype);
+		switch (token.type)
+		{
+			case TokenType::Keyword:
+				m_program.append (static_cast <ByteCode> (token.value));
+				break;
+
+			case TokenType::Numeric:
+				m_program.append (token.value);
+				break;
+
+			case TokenType::Register:
+				m_program.append (static_cast <byte_t> (token.value));
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+//------------------------------
+
 const char* Assembler::StrTokenType (TokenType type)
 {
 	#define TRANSLATE_(type) case TokenType::##type: { return #type; break; }
@@ -421,12 +445,37 @@ ByteCode Assembler::toByteCode (stack_value_t value)
 
 //------------------------------
 
-Assembler::source_code_container::token& Assembler::nextToken ()
+Assembler::source_code_container::token Assembler::followingToken ()
 {
-	if (m_next_token_index >= m_source_code.tokens_count)
-		throw assembler_error ("Failed to get next token");
+	static source_code_container::token none_token = {};
+	none_token.begin       = "None";
+	none_token.end         = none_token.begin + strlen (none_token.begin);
+	none_token.len         = none_token.end - none_token.begin;
+	none_token.line_number = 0;
+	none_token.number      = 0;
+	none_token.type        = TokenType::None;
+	none_token.value       = 0x8BADC0DE;
 
-	source_code_container::token& token = m_source_code.tokens[m_next_token_index];
+	if (m_next_token_index >= m_source_code.tokens_count)
+		return none_token;
+
+	return m_source_code.tokens[m_next_token_index];
+}
+
+Assembler::source_code_container::token Assembler::followingToken (TokenType type)
+{
+	source_code_container::token token = followingToken ();
+	if (!static_cast <bool> (token.type & type))
+		throw assembler_error ("Expected %s, got %s", StrTokenType (type), StrTokenType (token.type));
+
+	return token;
+}
+
+//------------------------------
+
+Assembler::source_code_container::token Assembler::nextToken ()
+{
+	source_code_container::token token = followingToken ();
 	m_next_token_index++;
 
 	return token;
@@ -434,12 +483,10 @@ Assembler::source_code_container::token& Assembler::nextToken ()
 
 //------------------------------
 
-Assembler::source_code_container::token& Assembler::nextToken (TokenType type)
+Assembler::source_code_container::token Assembler::nextToken (TokenType type)
 {
-	source_code_container::token token = nextToken ();
-
-	if (!static_cast <bool> (token.type & type))
-		throw assembler_error ("Expected %s, got %s", StrTokenType (type), StrTokenType (token.type));
+	source_code_container::token token = followingToken (type);
+	m_next_token_index++;
 
 	return token;
 }
@@ -510,13 +557,20 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 	}
 
 	listing ("0x%0*X %0*zu ", m_listing_settings.addr_digits, addr, m_listing_settings.cont_bytes_count_digits, content_size);
+	
+	#define PRINT_CONT_BYTE_(index)																					 \
+	{																												 \
+		unsigned char byte = *static_cast <unsigned char*> (content_begin + index);									 \
+		if (m_listing_settings.cont_print_binary) listing (PRINTF_BINARY_PATTERN " ", PRINTF_BYTE_TO_BINARY (byte)); \
+		else                                      listing ("%02X ",                                          byte ); \
+	}
 
 	for (size_t i = 0; i < content_size && i < m_listing_settings.cont_bytes; i++)
-		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
+		PRINT_CONT_BYTE_ (i);
 
 	if (content_size < m_listing_settings.cont_bytes)
 		for (size_t i = 0; i < m_listing_settings.cont_bytes - content_size; i++)
-			listing ("   ");
+			listing ("%*s", (m_listing_settings.cont_print_binary? 8: 2) + 1, "");
 
 	size_t bytes_remaining = (content_size > m_listing_settings.cont_bytes)? content_size - m_listing_settings.cont_bytes: 0;
 
@@ -530,10 +584,12 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 			listing ("\n%*s ", m_listing_settings.line_digits, "");
 		}
 
-		listing ("%02X ", *static_cast <unsigned char*> (content_begin + i));
+		PRINT_CONT_BYTE_ (i);
 	}
 
 	listing ("\n");
+
+	#undef PRINT_CONT_BYTE_
 }
 
 //------------------------------
