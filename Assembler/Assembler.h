@@ -45,6 +45,8 @@ public:
 	void        setSourceCode (const char* source);
 	const char* getSourceCode ();
 
+	void loadSourceCode (const char* filename);
+
 	void                    setProgram (const ProgramContainer& program);
 	const ProgramContainer& getProgram ();
 
@@ -87,10 +89,13 @@ private:
 		const char* begin;
 		size_t      len;
 
-		line*        lines;
-		token*       tokens;
-		size_t       lines_count;
-		size_t       tokens_count;
+		line*  lines;
+		token* tokens;
+		size_t lines_count;
+		size_t tokens_count;
+
+		      char* loaded_source;
+		const char* filename;
 	} m_source_code;
 
 	listing_settings m_listing_settings;

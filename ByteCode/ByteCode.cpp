@@ -48,3 +48,15 @@ const char* CommandManual (ByteCode code)
 }
 
 //------------------------------
+
+TokenType operator | (TokenType lft, TokenType rgt)
+{
+	return static_cast <TokenType> (static_cast <token_base_t> (lft) | static_cast <token_base_t> (rgt));
+}
+
+TokenType operator & (TokenType lft, TokenType rgt)
+{
+	return static_cast <TokenType> (static_cast <token_base_t> (lft) & static_cast <token_base_t> (rgt));
+}
+
+//------------------------------

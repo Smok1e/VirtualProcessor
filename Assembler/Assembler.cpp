@@ -39,8 +39,11 @@ Assembler::~Assembler ()
 
 void Assembler::setSourceCode (const char* source)
 {
-	m_source_code.begin = source;
-	m_source_code.len   = strlen (source);
+	releaseTokens ();
+
+	m_source_code.begin    = source;
+	m_source_code.len      = strlen (source);
+	m_source_code.filename = "Loaded from string";
 
 	tokenize ();
 }
@@ -48,6 +51,42 @@ void Assembler::setSourceCode (const char* source)
 const char* Assembler::getSourceCode ()
 {
 	return m_source_code.begin;
+}
+
+//------------------------------
+
+void Assembler::loadSourceCode (const char* filename)
+{
+	releaseTokens ();
+
+	FILE* file = nullptr;
+	errno_t err = fopen_s (&file, filename, "rb");
+
+	if (!file || err)
+	{
+		static char errbuff[ASSEMBLER_BUFFSIZE] = "";
+		strerror_s (errbuff, err);
+
+		throw assembler_error (errbuff);
+	}
+
+	fseek (file, 0, SEEK_END);
+	size_t len = ftell (file);
+	
+	m_source_code.loaded_source = new char[len+2];
+
+	fseek (file, 0, SEEK_SET);
+	fread (m_source_code.loaded_source, 1, len, file);
+	m_source_code.loaded_source[len  ] = '\n';
+	m_source_code.loaded_source[len+1] = '\0';
+
+	fclose (file);
+
+	m_source_code.filename = filename;
+	m_source_code.begin    = m_source_code.loaded_source;
+	m_source_code.len      = len+1;
+
+	tokenize ();
 }
 
 //------------------------------
@@ -92,6 +131,9 @@ Assembler::listing_settings Assembler::getListingSettings ()
 
 void Assembler::assemble ()
 {
+	if (!m_source_code.tokens)
+		throw assembler_error ("No source to complie");
+
 	m_program.clear ();
 
 	m_program.append (static_cast <stack_value_t> (ASSEMBLER_VERSION));
@@ -102,49 +144,52 @@ void Assembler::assemble ()
 	{
 		size_t prev_addr = m_program.bytes ();
 
-		source_code_container::token token = nextToken  (TokenType::keyword);
-		ByteCode                     cmd   = toByteCode (token.value);
+		source_code_container::token token = nextToken (TokenType::Keyword | TokenType::Newline);
+		source_code_container::line  line  = m_source_code.lines[token.line_number];
 
-		source_code_container::line line = m_source_code.lines[token.line_number];
-		
-		if (cmd >= ByteCode::amount)
-			throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
-
-		m_program.append (cmd);
-
-		#define ACD_(command, args, desc) case ByteCode::command:      \
-		{														       \
-			for (auto& argtype: args)							       \
-			{													       \
-				stack_value_t value = nextToken (argtype).value;       \
-				if (argtype == TokenType::keyword)				       \
-					m_program.append (static_cast <ByteCode> (value)); \
-																       \
-				else m_program.append (value);					       \
-			}													       \
-																       \
-			break;                                                     \
-		}
-		switch (cmd)
+		if (token.type == TokenType::Keyword)
 		{
-			COMMANDS_DEFINES_
+			ByteCode cmd = toByteCode (token.value);
 
-			default:
-				break;
+			if (cmd >= ByteCode::amount)
+				throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
+
+			m_program.append (cmd);
+
+			#define ACD_(command, args, desc) case ByteCode::command:      \
+			{														       \
+				for (auto& argtype: args)							       \
+				{													       \
+					stack_value_t value = nextToken (argtype).value;       \
+					if (argtype == TokenType::Keyword)				       \
+						m_program.append (static_cast <ByteCode> (value)); \
+																		   \
+					else m_program.append (value);					       \
+				}													       \
+																		   \
+				break;                                                     \
+			}
+			switch (cmd)
+			{
+				COMMANDS_DEFINES_
+
+				default:
+					break;
+			}
+			#undef ACD_
+
+			switch (cmd)
+			{
+				case ByteCode::hlt:
+					hlt_found = true;
+					break;
+
+				default: 
+					break;
+			}
+
+			nextToken (TokenType::Newline);
 		}
-		#undef ACD_
-
-		switch (cmd)
-		{
-			case ByteCode::hlt:
-				hlt_found = true;
-				break;
-
-			default: 
-				break;
-		}
-
-		nextToken (TokenType::newline);
 
 		listing_line (line.number, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, line.begin, line.len);
 	}
@@ -170,12 +215,12 @@ void Assembler::tokenize ()
 	std::vector <source_code_container::line > tmp_lines_buff;
 	std::vector <source_code_container::token> tmp_tokens_buff;
 
-	static source_code_container::token newline = {};
-	newline.type  = TokenType::newline;
-	newline.begin = "$";
-	newline.end   = newline.begin + 1;
-	newline.len   = 1;
-	newline.value = 0xDEFEC8ED;
+	static source_code_container::token Newline = {};
+	Newline.type  = TokenType::Newline;
+	Newline.begin = "$";
+	Newline.end   = Newline.begin + 1;
+	Newline.len   = 1;
+	Newline.value = 0xDEFEC8ED;
 
 	size_t current_line_number = 0, current_token_number = 0;
 	for (const char* line_begin = m_source_code.begin, *line_end = Assembler_strpbrk (line_begin, LINE_DELIMITERS); line_end; line_begin = line_end+1, line_end = Assembler_strpbrk (line_begin, LINE_DELIMITERS), current_line_number++)
@@ -200,9 +245,9 @@ void Assembler::tokenize ()
 
 		tmp_lines_buff.push_back (current_line);
 
-		newline.number      = current_token_number;
-		newline.line_number = current_line_number;
-		tmp_tokens_buff.push_back (newline);
+		Newline.number      = current_token_number;
+		Newline.line_number = current_line_number;
+		tmp_tokens_buff.push_back (Newline);
 
 		current_token_number++;
 	}
@@ -224,6 +269,9 @@ void Assembler::releaseTokens ()
 {
 	if (!m_source_code.lines) return;
 
+	if (m_source_code.loaded_source)
+		delete[] (m_source_code.loaded_source);
+
 	delete[] (m_source_code.lines );
 	delete[] (m_source_code.tokens);
 
@@ -235,13 +283,18 @@ void Assembler::releaseTokens ()
 
 	m_source_code.begin = nullptr;
 	m_source_code.len   = 0;
+
+	m_source_code.loaded_source = nullptr;
 }
 
 //------------------------------
 
 TokenType Assembler::determineTokenType (const char* begin, const char* end)
 {
-	return std::isdigit (*begin)? TokenType::numeric: TokenType::keyword;
+	if (std::isdigit (*begin))
+		return TokenType::Numeric;
+
+	return TokenType::Keyword;
 }
 
 //------------------------------
@@ -279,11 +332,11 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 	switch (token.type)
 	{
-		case TokenType::keyword:
+		case TokenType::Keyword:
 			token.value = interpretCommandToken (begin, token.len);
 			break;
 
-		case TokenType::numeric:
+		case TokenType::Numeric:
 			token.value = interpretNumberToken (begin, token.len);
 			break;
 
@@ -303,9 +356,9 @@ const char* Assembler::StrTokenType (TokenType type)
 
 	switch (type)
 	{
-		TRANSLATE_ (keyword);
-		TRANSLATE_ (numeric);
-		TRANSLATE_ (newline);
+		TRANSLATE_ (Keyword);
+		TRANSLATE_ (Numeric);
+		TRANSLATE_ (Newline);
 
 		default: break;
 	}
@@ -348,7 +401,7 @@ Assembler::source_code_container::token& Assembler::nextToken (TokenType type)
 {
 	source_code_container::token token = nextToken ();
 
-	if (token.type != type)
+	if (!static_cast <bool> (token.type & type))
 		throw assembler_error ("Expected %s, got %s", StrTokenType (type), StrTokenType (token.type));
 
 	return token;

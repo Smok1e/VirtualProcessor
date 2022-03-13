@@ -13,12 +13,9 @@ int main ()
 
 	try
 	{
-		const char* source =
-			"test push \n";
-
 		Assembler assembler;
 		assembler.setListingStream (&listing);
-		assembler.setSourceCode    (source);
+		assembler.loadSourceCode   ("source.asm");
 		assembler.assemble         ();
 
 		assembler.getProgram ().save ("test.bin");
@@ -30,7 +27,12 @@ int main ()
 
 	catch (assembler_error err)
 	{
-		printf ("Exception: %s\n", err.what ());
+		printf ("Assembler error: %s\n", err.what ());
+	}
+
+	catch (std::exception exc)
+	{
+		printf ("Unexpected exception thrown: %s\n", exc.what ());
 	}
 }
 

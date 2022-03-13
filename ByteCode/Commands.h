@@ -1,7 +1,3 @@
-//-----------------------------------------//
-// This header was generated automatically //
-//-----------------------------------------//
-
 #pragma once
 
 //------------------------------
@@ -9,7 +5,7 @@
 #define TOKENS_(...) std::initializer_list <TokenType> (__VA_ARGS__)
 
 #define COMMANDS_DEFINES_ \
-ACD_ (push, TOKENS_ ({TokenType::numeric}), "push <number> - push number value to stack",        { push (nextStackValue ());                                                                                                                                       }) \
+ACD_ (push, TOKENS_ ({TokenType::Numeric}), "push <number> - push number value to stack",        { push (nextStackValue ());                                                                                                                                       }) \
 ACD_ (pop,  TOKENS_ ({                  }), "pop - pop value from stack",                        { pop ();                                                                                                                                                         }) \
 ACD_ (add,  TOKENS_ ({                  }), "add - sum 2 top stack values",                      { double rgt = popNumber ();  double lft = popNumber ();   push (lft + rgt);                                                                                      }) \
 ACD_ (sub,  TOKENS_ ({                  }), "sub - subtract 2 top stack values",                 { double rgt = popNumber ();  double lft = popNumber ();   push (lft - rgt);                                                                                      }) \
@@ -19,9 +15,9 @@ ACD_ (in,   TOKENS_ ({                  }), "in - push number value from program
 ACD_ (out,  TOKENS_ ({                  }), "out - pop and print number value",                  { output ("%lf\n", popNumber ());                                                                                                                                 }) \
 ACD_ (hlt,  TOKENS_ ({                  }), "hlt - halt program",                                {                                                                                                                                                                 }) \
 ACD_ (ver,  TOKENS_ ({                  }), "ver - push assembler version to stack",             { push (static_cast <double> (ASSEMBLER_VERSION));                                                                                                                }) \
-ACD_ (man,  TOKENS_ ({TokenType::keyword}), "man <command> - print command manual",              { output ("%s\n", CommandManual (nextInstruction ()));                                                                                                            }) \
+ACD_ (man,  TOKENS_ ({TokenType::Keyword}), "man <command> - print command manual",              { output ("%s\n", CommandManual (nextInstruction ()));                                                                                                            }) \
 ACD_ (hlp,  TOKENS_ ({                  }), "hlp - print commands reference",                    { output ("Commands reference:\n"); for (size_t i = ByteCodesBegin; i < ByteCodesAmount; i++) output ("%s\n", CommandManual (static_cast <ByteCode> (i)));        }) \
 ACD_ (ret,  TOKENS_ ({                  }), "ret - set top stack value as program return value", { setReturnValue (popNumber ());                                                                                                                                  }) \
-ACD_ (test, TOKENS_ ({TokenType::keyword}), "test - test command",                               { output ("123\n");                                                                                                                                               }) \
+ACD_ (test, TOKENS_ ({TokenType::Keyword}), "test - test command",                               { output ("123\n");                                                                                                                                               }) \
 
 //------------------------------

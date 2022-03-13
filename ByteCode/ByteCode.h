@@ -33,11 +33,13 @@ enum class ByteCode: byte_t
 
 //------------------------------
 
-enum class TokenType
+typedef byte_t token_base_t;
+enum class TokenType: token_base_t
 {
-	keyword,
-	numeric,
-	newline,
+	Keyword  = 0b00000001,
+	Numeric  = 0b00000010,
+	Register = 0b00000100,
+	Newline  = 0b00001000,
 
 	amount,
 	none
@@ -77,5 +79,8 @@ struct program_header
 ByteCode    TranslateToByteCode (const char* str);
 const char* ByteCodeToStr       (ByteCode code);
 const char* CommandManual       (ByteCode code);
+
+TokenType operator | (TokenType lft, TokenType rgt);
+TokenType operator & (TokenType lft, TokenType rgt);
 
 //------------------------------
