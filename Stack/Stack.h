@@ -56,6 +56,8 @@ public:
 	inline       data_t* end   ();
 	inline const data_t* end   () const;
 
+	const data_t& operator[] (size_t index) const;
+
 	void printBytes     (std::ostream& stream = std::cout) const;
 	void printDebugDump (std::ostream& stream = std::cout) const;
 	void printDebugDump (std::ostream& stream = std::cout);
@@ -76,7 +78,8 @@ private:
 	inline void   set (size_t index, const data_t& value);
 	inline data_t get (size_t index) const;
 
-	inline data_t* getData (char* data = nullptr, size_t index = 0);
+	inline       data_t* getData (char*       data = nullptr, size_t index = 0);
+	inline const data_t* getData (const char* data = nullptr, size_t index = 0) const;
 
 	inline void free   (size_t index, char* data = nullptr);
 	inline bool isFree (size_t index, char* data = nullptr) const;

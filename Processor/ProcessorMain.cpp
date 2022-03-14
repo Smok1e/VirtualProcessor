@@ -6,11 +6,10 @@
 
 int main ()
 {
-
 	try
 	{
 		ProgramContainer program;
-		program.load ("../Assembler/test.bin");
+		program.load ("../Assembler/program.bin");
 
 		Processor processor;
 		processor.defaultIO ();

@@ -15,13 +15,13 @@ int main ()
 	{
 		Assembler assembler;
 		assembler.setListingStream (&listing);
-		assembler.loadSourceCode   ("source.mcasm");
+		assembler.loadSourceCode   ("qe.mcasm");
 
 		//assembler.dumpTokens ();
 
 		assembler.assemble         ();
 
-		assembler.getProgram ().save ("test.bin");
+		assembler.getProgram ().save ("program.bin");
 		printf ("Program saved as test.bin\n\n");
 
 		printf ("Listing:\n");

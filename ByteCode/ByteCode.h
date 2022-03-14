@@ -11,7 +11,7 @@
 
 //------------------------------
 
-typedef unsigned __int32            stack_value_t;
+typedef          __int64            stack_value_t;
 typedef unsigned __int8             byte_t;
 typedef std::vector <stack_value_t> program_t;
 
@@ -82,7 +82,7 @@ extern const unsigned         REGISTER_SEQUENCE_LEN;
 
 //     const unsigned         NUMBERS_ACURACY    = 3;
        const unsigned         NUMBERS_MODIFIER	 = 256;
-       const unsigned         ASSEMBLER_VERSION  = 15;
+       const unsigned         ASSEMBLER_VERSION  = 16;
        const unsigned         ASSEMBLER_BUFFSIZE = 1024;
        const unsigned __int32 PROGRAM_SIGNATURE  = TXT232UINT ("Meow");
 	   const unsigned __int8  REGISTERS_COUNT    = 4;
@@ -99,7 +99,7 @@ struct program_header
 
 //------------------------------
 
-ByteCode    TranslateToByteCode (const char* str);
+ByteCode    TranslateToByteCode (const char* str, size_t len);
 const char* ByteCodeToStr       (ByteCode code);
 const char* CommandManual       (ByteCode code);
 

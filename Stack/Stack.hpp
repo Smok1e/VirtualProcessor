@@ -220,6 +220,14 @@ const data_t* Stack <data_t>::end () const
 //------------------------------
 
 template <typename data_t>
+const data_t& Stack <data_t>::operator[] (size_t index) const
+{
+	return *getData (nullptr, index);
+}
+
+//------------------------------
+
+template <typename data_t>
 void Stack <data_t>::set (size_t index, const data_t& value)
 {
 	*reinterpret_cast <data_t*> (m_data + index * sizeof (data_t) + sizeof (canary_t)) = value;
@@ -238,6 +246,13 @@ data_t* Stack <data_t>::getData (char* data /*= nullptr*/, size_t index /*= 0*/)
 {
 	if (!data) data = m_data;
 	return reinterpret_cast <data_t*> (data + sizeof (canary_t) + index * sizeof (data_t));
+}
+
+template <typename data_t>
+const data_t* Stack <data_t>::getData (const char* data /*= nullptr*/, size_t index /*= 0*/) const
+{
+	if (!data) data = m_data;
+	return reinterpret_cast <const data_t*> (data + sizeof (canary_t) + index * sizeof (data_t));
 }
 
 //------------------------------

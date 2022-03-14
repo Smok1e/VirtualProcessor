@@ -72,6 +72,8 @@ private:
 	TokenType                           nextArgType     ();
 	byte_t                              nextByte        ();
 
+	void jump (uintptr_t addr);
+
 	// Stack
 	void          push           (stack_value_t value );
 	void          push           (ByteCode      cmd   );

@@ -4,7 +4,7 @@
 
 bool IsDoubleDigit (char character)
 {
-	return (character >= '0' && character <= '9') || character == '.';
+	return (character >= '0' && character <= '9') || character == '.' || character == '-';
 }
 
 bool IsNumeric (const char* str)
