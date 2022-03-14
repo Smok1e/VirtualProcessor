@@ -15,7 +15,7 @@ Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS =
 	3,    // line digits
 	4,    // address digits
 	6,    // content bytes per line
-	1,    // content bytes count digits
+	2,    // content bytes count digits
 	false // print content as binary
 };
 
@@ -280,7 +280,7 @@ void Assembler::releaseTokens ()
 
 TokenType Assembler::determineTokenType (const char* begin, const char* end)
 {
-	if (std::isdigit (*begin))
+	if (IsDoubleDigit (*begin))
 		return TokenType::Numeric;
 
 	if (strchr (LINE_DELIMITERS, *begin))
@@ -296,8 +296,11 @@ TokenType Assembler::determineTokenType (const char* begin, const char* end)
 
 stack_value_t Assembler::interpretNumberToken (const char* str, size_t len)
 {
+	if (len > 2 && strncmp (str, "0x", 2) == 0)
+		return static_cast <stack_value_t> (strtol (str, nullptr, 16) * NUMBERS_MODIFIER);
+
 	if (!IsNumeric (str, len))
-		throw assembler_error ("Syntax error: '%.*s' is not numberic", len, str);
+		throw assembler_error ("Syntax error: '%.*s' is not numeric", len, str);
 
 	return static_cast <stack_value_t> (floor (strtod (str, nullptr) * NUMBERS_MODIFIER));
 }
@@ -306,7 +309,7 @@ stack_value_t Assembler::interpretNumberToken (const char* str, size_t len)
 
 stack_value_t Assembler::interpretCommandToken (const char* str, size_t len)
 {
-	ByteCode cmd = TranslateToByteCode (str);
+	ByteCode cmd = TranslateToByteCode (str, len);
 	if (cmd == ByteCode::unknown)
 		throw assembler_error ("Syntax error: Unknown command '%.*s'", len, str);
 
@@ -579,10 +582,7 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 	for (size_t i = m_listing_settings.cont_bytes, l = m_listing_settings.cont_bytes; i < m_listing_settings.cont_bytes + bytes_remaining; i++, l++)
 	{
 		if (l >= m_listing_settings.cont_bytes)
-		{
-			l = 0;
-			listing ("\n%*s ", m_listing_settings.line_digits, "");
-		}
+			l = 0, listing ("\n%*s %*s %*s", m_listing_settings.line_digits, "", m_listing_settings.addr_digits, "", m_listing_settings.cont_bytes_count_digits, "");
 
 		PRINT_CONT_BYTE_ (i);
 	}

@@ -1,0 +1,70 @@
+>-----------------------------------------<
+>-{ Solving ax^2 + bx + c = 0 equiation }-<
+>-----------------------------------------<
+
+> Input a, b, c coefficients to registers
+in
+pop @ax
+
+in
+pop @bx
+
+in
+pop @cx
+
+> Calculating discriminant
+> D = b^2 - 4*ac
+
+push @bx
+sqr
+
+push @ax
+push @cx
+push 4
+
+mul
+mul
+
+sub
+
+> Finding square root of discriminant and put it in dx register
+sqrt
+pop @dx
+
+> Calculating x1 root
+> x1 = (-b + sqrt (D)) / 2a
+
+push @bx
+push -1
+mul
+
+push @dx
+add
+
+push @ax
+push 2
+mul
+
+div
+
+> Print result
+out
+
+> Calculating x2 root
+> x2 = (-b - sqrt (D)) / 2a
+
+push @bx
+push -1
+mul
+
+push @dx
+sub
+
+push @ax
+push 2
+mul
+
+div
+
+> Print result
+out

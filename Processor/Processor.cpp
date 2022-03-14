@@ -165,6 +165,19 @@ byte_t Processor::nextByte ()
 
 //------------------------------
 
+void Processor::jump (uintptr_t addr)
+{
+	if (addr >= m_program.bytes ())
+	{
+		error ("Fatal error: Invalid address (0x%08X), maximum possible address is 0x%08X", addr, m_program.bytes ());
+		throw processor_error ("Invalid address (0x%08X), maximum possible address is 0x%08X", addr, m_program.bytes ());
+	}
+
+	m_next_data_index = addr;
+}
+
+//------------------------------
+
 void Processor::processInstruction (ByteCode cmd)
 {
 	#define ACD_(instruction, args, descr, ...) case ByteCode::##instruction: { __VA_ARGS__; break; }

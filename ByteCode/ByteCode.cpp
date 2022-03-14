@@ -20,9 +20,9 @@ const unsigned REGISTER_SEQUENCE_LEN = strlen (REGISTER_SEQUENCE);
 
 //------------------------------
 
-ByteCode TranslateToByteCode (const char* str)
+ByteCode TranslateToByteCode (const char* str, size_t len)
 {
-	#define ACD_(cmd, argc, desc, ...) if (strncmp (str, #cmd, sizestr (#cmd)) == 0) { return ByteCode::##cmd; };
+	#define ACD_(cmd, argc, desc, ...) if (strncmp (str, #cmd, len) == 0) { return ByteCode::##cmd; };
 	COMMANDS_DEFINES_
 	#undef ACD_
 

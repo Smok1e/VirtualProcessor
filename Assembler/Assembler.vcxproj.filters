@@ -46,6 +46,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <None Include="qe.mcasm">
+      <Filter>Resource Files</Filter>
+    </None>
     <None Include="source.mcasm">
       <Filter>Resource Files</Filter>
     </None>

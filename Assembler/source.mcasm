@@ -1,7 +1,2 @@
-push 10
-push 20
-mul
-pop @ax
-in
-pop @bx
-reg
+man sqrt
+man sqr
