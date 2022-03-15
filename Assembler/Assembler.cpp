@@ -14,9 +14,8 @@ Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS =
 {
 	3,    // line digits
 	4,    // address digits
-	6,    // content bytes per line
-	2,    // content bytes count digits
-	false // print content as binary
+	6,    // max content bytes per line
+	false // print content binary if true, else hexademically
 };
 
 //------------------------------
@@ -549,7 +548,7 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 	if (len < 0) len = strlen (message);
 	
 	if (line >= 0) 
-		listing ("%0*zu ", m_listing_settings.line_digits, line);
+		listing ("%0*zu ", m_listing_settings.line_digits, line+1);
 
 	else
 	{
@@ -559,7 +558,7 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 		m_listing_stream -> put (' ');
 	}
 
-	listing ("0x%0*X %0*zu ", m_listing_settings.addr_digits, addr, m_listing_settings.cont_bytes_count_digits, content_size);
+	listing ("0x%0*X ", m_listing_settings.addr_digits, addr);
 	
 	#define PRINT_CONT_BYTE_(index)																					 \
 	{																												 \
@@ -582,7 +581,7 @@ void Assembler::listing_line (int line, uintptr_t addr, byte_t* content_begin, s
 	for (size_t i = m_listing_settings.cont_bytes, l = m_listing_settings.cont_bytes; i < m_listing_settings.cont_bytes + bytes_remaining; i++, l++)
 	{
 		if (l >= m_listing_settings.cont_bytes)
-			l = 0, listing ("\n%*s %*s %*s", m_listing_settings.line_digits, "", m_listing_settings.addr_digits, "", m_listing_settings.cont_bytes_count_digits, "");
+			l = 0, listing ("\n%*s %*s ", m_listing_settings.line_digits + 1, "", m_listing_settings.addr_digits + 1, "");
 
 		PRINT_CONT_BYTE_ (i);
 	}

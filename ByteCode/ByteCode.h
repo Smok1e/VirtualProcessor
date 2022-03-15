@@ -11,7 +11,7 @@
 
 //------------------------------
 
-typedef          __int32            stack_value_t;
+typedef          __int64            stack_value_t;
 typedef unsigned __int8             byte_t;
 typedef std::vector <stack_value_t> program_t;
 
@@ -80,7 +80,7 @@ extern const char*            REGISTER_SEQUENCE;
 extern const unsigned         REGISTER_SEQUENCE_LEN;
 
 //     const unsigned         NUMBERS_ACURACY    = 3;
-       const unsigned         NUMBERS_MODIFIER	 = 256;
+       const unsigned         NUMBERS_MODIFIER	 = 0xFF;
        const unsigned         ASSEMBLER_VERSION  = 17;
        const unsigned         ASSEMBLER_BUFFSIZE = 1024;
        const unsigned __int32 PROGRAM_SIGNATURE  = TXT232UINT ("Meow"); // MEOW - Mcasm Executable Outrage Waffle

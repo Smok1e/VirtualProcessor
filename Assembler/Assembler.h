@@ -35,7 +35,6 @@ public:
 		unsigned __int8 line_digits;
 		unsigned __int8 addr_digits;
 		unsigned __int8 cont_bytes;
-		unsigned __int8 cont_bytes_count_digits;
 		bool            cont_print_binary;
 	};
 

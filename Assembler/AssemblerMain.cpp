@@ -15,7 +15,7 @@ int main ()
 	{
 		Assembler assembler;
 		assembler.setListingStream (&listing);
-		assembler.loadSourceCode   ("side.mcasm");
+		assembler.loadSourceCode   ("qe.mcasm");
 
 		//assembler.dumpTokens ();
 
