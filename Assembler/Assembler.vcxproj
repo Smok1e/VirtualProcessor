@@ -151,6 +151,9 @@
     <ClCompile Include="..\Stack\StackCheckError.cpp" />
     <ClCompile Include="Assembler.cpp" />
     <ClCompile Include="AssemblerMain.cpp" />
+    <None Include="side.mcasm">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assembler.h" />

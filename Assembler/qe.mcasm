@@ -2,69 +2,69 @@
 >-{ Solving ax^2 + bx + c = 0 equiation }-<
 >-----------------------------------------<
 
-> Input a, b, c coefficients to registers
-in
-pop @ax
+> Input a, b, c coefficients to ax, bx, cx registers:
+	in
+	pop @ax
 
-in
-pop @bx
+	in
+	pop @bx
 
-in
-pop @cx
+	in
+	pop @cx
 
-> Calculating discriminant
-> D = b^2 - 4*ac
+> Calculating discriminant:
+	> D = b^2 - 4*ac
 
-push @bx
-sqr
+	push @bx
+	sqr
 
-push @ax
-push @cx
-push 4
+	push @ax
+	push @cx
+	push 4
 
-mul
-mul
+	mul
+	mul
 
-sub
+	sub
 
-> Finding square root of discriminant and put it in dx register
-sqrt
-pop @dx
+> Finding square root of discriminant and put it in dx register:
+	sqrt
+	pop @dx
 
-> Calculating x1 root
-> x1 = (-b + sqrt (D)) / 2a
+> Calculating x1 root:
+	> x1 = (-b + sqrt (D)) / 2a
 
-push @bx
-push -1
-mul
+	push @bx
+	push -1
+	mul
 
-push @dx
-add
+	push @dx
+	add
 
-push @ax
-push 2
-mul
+	push @ax
+	push 2
+	mul
 
-div
+	div
 
-> Print result
-out
+> Print result:
+	out
 
-> Calculating x2 root
-> x2 = (-b - sqrt (D)) / 2a
+> Calculating x2 root:
+	> x2 = (-b - sqrt (D)) / 2a
 
-push @bx
-push -1
-mul
+	push @bx
+	push -1
+	mul
 
-push @dx
-sub
+	push @dx
+	sub
 
-push @ax
-push 2
-mul
+	push @ax
+	push 2
+	mul
 
-div
+	div
 
-> Print result
-out
+> Print result:
+	out

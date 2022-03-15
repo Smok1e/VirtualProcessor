@@ -1,0 +1,57 @@
+>---------------------------------------------------------------<
+>-{ Finding 3rd side of triangle, based on the cosine theorem }-<
+>---------------------------------------------------------------<
+
+> a^2 + b^2 - 2*ab*cos A = c^2 => c = sqrt (a^2 + b^2 - 2*ab*cos A)
+
+> Put PI to dx register
+	push 3.14159265359
+	pop @dx
+
+> Input A side and put it in ax register:
+	in
+	pop @ax
+
+> Input B side and put it in bx register:
+	in
+	pop @bx
+
+> Input angle between A and B side as degrees, convert in radians and put it's cos in cx register:
+	in
+
+> Convert degrees to radians:
+	push 180
+	div
+
+	push @dx
+	mul
+
+	cos
+	pop @cx
+
+> Solve equation:
+	push @ax
+	sqr
+
+	push @bx
+	sqr
+
+	add
+	
+	push @ax
+	push @bx
+	mul
+
+	push 2
+	mul
+
+	push @cx
+	mul
+
+	sub
+	
+> Now we have square of third side of triangle in stack:
+	sqrt
+
+> Print result
+	out

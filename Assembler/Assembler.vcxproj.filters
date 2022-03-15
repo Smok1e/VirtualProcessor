@@ -52,5 +52,8 @@
     <None Include="source.mcasm">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="side.mcasm">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
