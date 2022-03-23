@@ -100,11 +100,11 @@ private:
 
 	listing_settings m_listing_settings;
 
-	TokenType                    determineTokenType     (const char* begin, const char* end);
-	stack_value_t                interpretNumberToken   (const char* begin, size_t len);
-	stack_value_t                interpretCommandToken  (const char* begin, size_t len);
-	stack_value_t                interpretRegisterToken (const char* begin, size_t len);
-	source_code_container::token interptetToken         (const char* begin, const char* end, size_t number, size_t line_number);
+	TokenType                    determineTokenType      (const char* begin, const char* end);
+	stack_value_t                interpretNumberToken    (const char* begin, size_t len);
+	stack_value_t                interpretCommandToken   (const char* begin, size_t len);
+	stack_value_t                interpretRegisterToken  (const char* begin, size_t len);
+	source_code_container::token interptetToken          (const char* begin, const char* end, size_t number, size_t line_number);
 
 	void compileInstruction (const std::initializer_list <TokenType>& args);
 
@@ -116,8 +116,8 @@ private:
 	void tokenize      ();
 	void releaseTokens ();
 
-	source_code_container::token followingToken ();
-	source_code_container::token followingToken (TokenType type);
+	source_code_container::token followingToken (                size_t offset = 0);
+	source_code_container::token followingToken (TokenType type, size_t offset = 0);
 
 	source_code_container::token nextToken ();
 	source_code_container::token nextToken (TokenType type);

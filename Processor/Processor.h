@@ -69,7 +69,7 @@ private:
 	template <typename value_t> value_t nextValue ();
 	ByteCode                            nextInstruction ();
 	stack_value_t                       nextStackValue  ();
-	TokenType                           nextArgType     ();
+	byte_type                           nextByteType    ();
 	byte_t                              nextByte        ();
 
 	void jump (uintptr_t addr);

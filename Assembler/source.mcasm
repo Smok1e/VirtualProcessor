@@ -1,2 +1,11 @@
-man sqrt
-man sqr
+push 9
+pop @bx
+
+push @bx + 3
+out
+
+push 3
+out
+
+push @bx
+out

@@ -153,9 +153,9 @@ stack_value_t Processor::nextStackValue ()
 	return nextValue <stack_value_t> ();
 }
 
-TokenType Processor::nextArgType ()
+byte_type Processor::nextByteType ()
 {
-	return nextValue <TokenType> ();
+	return nextValue <byte_type> ();
 }
 
 byte_t Processor::nextByte ()

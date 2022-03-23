@@ -15,7 +15,7 @@ Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS =
 	3,    // line digits
 	4,    // address digits
 	6,    // max content bytes per line
-	false // print content binary if true, else hexademically
+	true  // print content binary if true, else hexademically
 };
 
 //------------------------------
@@ -319,8 +319,6 @@ stack_value_t Assembler::interpretCommandToken (const char* str, size_t len)
 
 stack_value_t Assembler::interpretRegisterToken (const char* str, size_t len)
 {
-	// Register token: "@[abcd]x"
-
 	if (len != (2 + REGISTER_SEQUENCE_LEN))
 		throw assembler_error ("Syntax error: Invalid register '%.*s' len - %zu", len, str, len);
 
@@ -352,7 +350,7 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 	token.number      = number;
 	token.line_number = line_number;
 	token.type        = determineTokenType (begin, end);
-
+	
 	switch (token.type)
 	{
 		case TokenType::Keyword:
@@ -365,7 +363,7 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 		case TokenType::Register:
 			token.value = interpretRegisterToken (begin, token.len);
-			break;
+			break;	
 
 		default:
 			assembler_assert ("Unknown token type" && false);
@@ -379,16 +377,17 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 void Assembler::compileInstruction (const std::initializer_list <TokenType>& args)
 {
-	// Сперва проверяем тип каждого аргумента, и, если он имеет несколько возможных значений,
-	// добавляем в программу информацию типе [следующего за инструкцией токена].
-	// Подробная справка - в файле ByteCode.h
+	byte_type type = {};
+	if (args.size () > 0) type.arg1_type = followingToken (*(args.begin () + 0), 0).type;
+	if (args.size () > 1) type.arg2_type = followingToken (*(args.begin () + 1), 1).type;
 
-	for (const auto& argtype: args)
-		if (!IsSingleTokenType (argtype)) 
-			m_program.append (followingToken (argtype).type);
+	m_program.append (type);
 
 	for (const auto& argtype: args)
 	{
+		if (followingToken ().type == TokenType::Newline) 
+			break;
+
 		source_code_container::token token = nextToken (argtype);
 		switch (token.type)
 		{
@@ -418,10 +417,10 @@ const char* Assembler::StrTokenType (TokenType type)
 
 	switch (type)
 	{
-		TRANSLATE_ (Keyword );
-		TRANSLATE_ (Numeric );
-		TRANSLATE_ (Newline );
-		TRANSLATE_ (Register);
+		TRANSLATE_ (Keyword  );
+		TRANSLATE_ (Numeric  );
+		TRANSLATE_ (Newline  );
+		TRANSLATE_ (Register );
 
 		default: break;
 	}
@@ -447,7 +446,7 @@ ByteCode Assembler::toByteCode (stack_value_t value)
 
 //------------------------------
 
-Assembler::source_code_container::token Assembler::followingToken ()
+Assembler::source_code_container::token Assembler::followingToken (size_t offset /*= 0*/)
 {
 	static source_code_container::token none_token = {};
 	none_token.begin       = "None";
@@ -458,15 +457,15 @@ Assembler::source_code_container::token Assembler::followingToken ()
 	none_token.type        = TokenType::None;
 	none_token.value       = 0x8BADC0DE;
 
-	if (m_next_token_index >= m_source_code.tokens_count)
+	if (m_next_token_index + offset >= m_source_code.tokens_count)
 		return none_token;
 
-	return m_source_code.tokens[m_next_token_index];
+	return m_source_code.tokens[m_next_token_index + offset];
 }
 
-Assembler::source_code_container::token Assembler::followingToken (TokenType type)
+Assembler::source_code_container::token Assembler::followingToken (TokenType type, size_t offset /*= 0*/)
 {
-	source_code_container::token token = followingToken ();
+	source_code_container::token token = followingToken (offset);
 	if (!static_cast <bool> (token.type & type))
 		throw assembler_error ("Expected %s, got %s", StrTokenType (type), StrTokenType (token.type));
 
