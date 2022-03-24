@@ -17,7 +17,10 @@ Processor::Processor ():
 
 	m_retval (0),
 
-	m_registers {}
+	m_registers {},
+	m_memory    {},
+
+	m_test_marker (0)
 {}
 
 //------------------------------
@@ -163,6 +166,42 @@ byte_t Processor::nextByte ()
 	return nextValue <byte_t> ();
 }
 
+stack_value_t* Processor::nextAddress (byte_type args)
+{
+	if (args.is_address)
+	{
+		stack_value_t lft = 0;
+		if      (args.arg1_type == TokenType::Numeric ) lft = nextStackValue ();
+		else if (args.arg1_type == TokenType::Register) lft = regGetStackValue (nextByte ());
+
+		stack_value_t rgt = 0;
+		if      (args.arg2_type == TokenType::Numeric ) rgt = nextStackValue ();
+		else if (args.arg2_type == TokenType::Register) rgt = regGetStackValue (nextByte ());
+
+		uintptr_t addr = static_cast <uintptr_t> (static_cast <double> (lft + rgt) / NUMBERS_MODIFIER);
+		if (addr + sizeof (stack_value_t) > PROCESSOR_MEMORY_SIZE)
+		{
+			error ("Fatal error: Invalid address - 0x%08X\n", addr);
+			throw processor_error ("Invalid address - 0x%08X", addr);
+		}
+
+		return reinterpret_cast <stack_value_t*> (m_memory + addr);
+	}
+
+	else
+	{
+		if (args.arg1_type == TokenType::Register)
+			return m_registers + nextByte ();
+
+		else if (args.arg1_type == TokenType::Numeric)
+		{
+			static stack_value_t tmp_buff = 0;
+			tmp_buff = nextStackValue ();
+			return &tmp_buff;
+		}
+	}
+}
+
 //------------------------------
 
 void Processor::jump (uintptr_t addr)
@@ -180,6 +219,7 @@ void Processor::jump (uintptr_t addr)
 
 void Processor::processInstruction (ByteCode cmd)
 {
+	byte_type args = nextByteType ();
 	#define ACD_(instruction, args, descr, ...) case ByteCode::##instruction: { __VA_ARGS__; break; }
 
 	switch (cmd)
@@ -205,14 +245,14 @@ void Processor::push (stack_value_t value)
 	m_stack.push (value);
 }
 
-void Processor::push (ByteCode cmd)
+void Processor::pushCommand (ByteCode cmd)
 {
 	push (static_cast <stack_value_t> (cmd));
 }
 
-void Processor::push (double number)
+void Processor::pushNumber (double number)
 {
-	push (static_cast <stack_value_t> (number * NUMBERS_MODIFIER));
+	push (static_cast <stack_value_t> (floor (number * NUMBERS_MODIFIER)));
 }
 
 //------------------------------
@@ -263,12 +303,12 @@ void Processor::regSet (size_t index, stack_value_t value)
 	m_registers[index] = value;
 }
 
-void Processor::regSet (size_t index, ByteCode cmd)
+void Processor::regSetCommand (size_t index, ByteCode cmd)
 {
 	regSet (index, static_cast <stack_value_t> (cmd));
 }
 
-void Processor::regSet (size_t index, double number)
+void Processor::regSetNumber (size_t index, double number)
 {
 	regSet (index, static_cast <stack_value_t> (floor (number * NUMBERS_MODIFIER)));
 }
@@ -294,6 +334,34 @@ ByteCode Processor::regGetInstruction (size_t index)
 double Processor::regGetNumber (size_t index)
 {
 	return static_cast <double> (regGetStackValue (index)) / NUMBERS_MODIFIER;
+}
+
+//------------------------------
+
+void Processor::memSet (double address, stack_value_t value)
+{
+	uintptr_t addr = static_cast <uintptr_t> (floor (address));
+
+	if (addr + sizeof (stack_value_t) > PROCESSOR_MEMORY_SIZE)
+	{
+		error ("Fatal error: Invalid address - 0x%08X\n", addr);
+		throw processor_error ("Invalid address - 0x%08X", addr);
+	}
+
+	*reinterpret_cast <stack_value_t*> (m_memory + addr) = value;
+}
+
+stack_value_t Processor::memGet (double address)
+{
+	uintptr_t addr = static_cast <uintptr_t> (floor (address));
+
+	if (addr + sizeof (stack_value_t) > PROCESSOR_MEMORY_SIZE)
+	{
+		error ("Fatal error: Invalid address - 0x%08X\n", addr);
+		throw processor_error ("Invalid address - 0x%08X", addr);
+	}
+
+	return *reinterpret_cast <stack_value_t*> (m_memory + addr);	
 }
 
 //------------------------------

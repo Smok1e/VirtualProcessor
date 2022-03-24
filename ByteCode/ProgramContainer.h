@@ -23,6 +23,9 @@ public:
 	template <typename value_t> 
 	void append (value_t value);
 
+	template <typename value_t>
+	void set (size_t index_in_bytes, value_t value);
+
 	bool   empty () const;
 	size_t bytes () const;
 

@@ -15,17 +15,19 @@ Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS =
 	3,    // line digits
 	4,    // address digits
 	6,    // max content bytes per line
-	true  // print content binary if true, else hexademically
+	false // print content binary if true, else hexademically
 };
 
 //------------------------------
 
 Assembler::Assembler ():
 	m_program          (),
+	m_program_index    (0),
 	m_source_code      ({0}),
 	m_next_token_index (0),
 	m_listing_stream   (nullptr),
-	m_listing_settings (DEFAULT_LISTINGS_SETTINGS)
+	m_listing_settings (DEFAULT_LISTINGS_SETTINGS),
+	m_name_table       {}
 {}
 
 //------------------------------
@@ -129,14 +131,24 @@ Assembler::listing_settings Assembler::getListingSettings ()
 
 //------------------------------
 
-void Assembler::assemble ()
+void Assembler::compile ()
+{
+	m_program.clear ();
+	while (assemble ());
+}
+
+//------------------------------
+
+bool Assembler::assemble ()
 {
 	if (!m_source_code.tokens)
 		throw assembler_error ("No source to complie");
 
-	m_program.clear ();
+	m_program_index = 0;
 
-	m_program.append (static_cast <stack_value_t> (ASSEMBLER_VERSION));
+	m_program.set (m_program_index, static_cast <stack_value_t> (ASSEMBLER_VERSION));
+	m_program_index += sizeof (stack_value_t);
+
 	listing_line (-1, 0, m_program.begin (), sizeof (stack_value_t), "[version]");
 
 	bool hlt_found = false;
@@ -154,7 +166,8 @@ void Assembler::assemble ()
 			if (cmd >= ByteCode::amount)
 				throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
 
-			m_program.append (cmd);
+			m_program.set (m_program_index, cmd);
+			m_program_index += sizeof (cmd);
 
 			#define ACD_(command, args, desc, ...) case ByteCode::##command: { compileInstruction (args); break; };
 			switch (cmd)
@@ -185,11 +198,15 @@ void Assembler::assemble ()
 	if (!hlt_found)
 	{
 		size_t prev_addr = m_program.bytes ();
-		m_program.append (ByteCode::hlt);
+		m_program.set (m_program_index, ByteCode::hlt);
+		m_program_index += sizeof (ByteCode::hlt);
+
 		listing_line (-1, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, "[auto haltion]");
 	}
 
 	m_program.shrink ();
+
+	return false;
 }
 
 //------------------------------
@@ -288,6 +305,12 @@ TokenType Assembler::determineTokenType (const char* begin, const char* end)
 	if (strncmp (begin, REGISTER_SEQUENCE, REGISTER_SEQUENCE_LEN) == 0)
 		return TokenType::Register;
 
+	if (strncmp (begin, ADDRESS_SEQUENCE, ADDRESS_SEQUENCE_LEN) == 0)
+		return TokenType::Address;
+
+	if (*(end-1) == ':')
+		return TokenType::Label;
+
 	return TokenType::Keyword;
 }
 
@@ -341,6 +364,20 @@ stack_value_t Assembler::interpretRegisterToken (const char* str, size_t len)
 
 //------------------------------
 
+stack_value_t Assembler::interpretAddressToken (const char* str, size_t len)
+{
+	return static_cast <stack_value_t> (0xDEADADD3);
+}
+
+//------------------------------
+
+stack_value_t Assembler::interpretLabelToken (const char* str, size_t len)
+{
+	return static_cast <stack_value_t> (0xB16B00B5);
+}
+
+//------------------------------
+
 Assembler::source_code_container::token Assembler::interptetToken (const char* begin, const char* end, size_t number, size_t line_number)
 {
 	source_code_container::token token = {};
@@ -353,21 +390,13 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 	
 	switch (token.type)
 	{
-		case TokenType::Keyword:
-			token.value = interpretCommandToken (begin, token.len);
-			break;
+		case TokenType::Keyword:  token.value = interpretCommandToken  (begin, token.len); break;
+		case TokenType::Numeric:  token.value = interpretNumberToken   (begin, token.len); break;
+		case TokenType::Register: token.value = interpretRegisterToken (begin, token.len); break;	
+		case TokenType::Address:  token.value = interpretAddressToken  (begin, token.len); break;
+		case TokenType::Label:    token.value = interpretLabelToken    (begin, token.len); break;
 
-		case TokenType::Numeric:
-			token.value = interpretNumberToken (begin, token.len);
-			break;
-
-		case TokenType::Register:
-			token.value = interpretRegisterToken (begin, token.len);
-			break;	
-
-		default:
-			assembler_assert ("Unknown token type" && false);
-			break;
+		default: assembler_assert ("Unknown token type" && false); break;
 	}
 
 	return token;
@@ -378,10 +407,17 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 void Assembler::compileInstruction (const std::initializer_list <TokenType>& args)
 {
 	byte_type type = {};
+	if (followingToken ().type == TokenType::Address)
+	{
+		nextToken ();
+		type.is_address = true;
+	}
+
 	if (args.size () > 0) type.arg1_type = followingToken (*(args.begin () + 0), 0).type;
 	if (args.size () > 1) type.arg2_type = followingToken (*(args.begin () + 1), 1).type;
 
-	m_program.append (type);
+	m_program.set (m_program_index, type);
+	m_program_index += sizeof (type);
 
 	for (const auto& argtype: args)
 	{
@@ -392,15 +428,21 @@ void Assembler::compileInstruction (const std::initializer_list <TokenType>& arg
 		switch (token.type)
 		{
 			case TokenType::Keyword:
-				m_program.append (static_cast <ByteCode> (token.value));
+				m_program.set (m_program_index, static_cast <ByteCode> (token.value));
+				m_program_index += sizeof (ByteCode);
+
 				break;
 
 			case TokenType::Numeric:
-				m_program.append (token.value);
+				m_program.set (m_program_index, token.value);
+				m_program_index += sizeof (token.value);
+
 				break;
 
 			case TokenType::Register:
-				m_program.append (static_cast <byte_t> (token.value));
+				m_program.set (m_program_index, static_cast <byte_t> (token.value));
+				m_program_index += sizeof (byte_t);
+
 				break;
 
 			default:
@@ -417,10 +459,12 @@ const char* Assembler::StrTokenType (TokenType type)
 
 	switch (type)
 	{
-		TRANSLATE_ (Keyword  );
-		TRANSLATE_ (Numeric  );
-		TRANSLATE_ (Newline  );
-		TRANSLATE_ (Register );
+		TRANSLATE_ (Keyword );
+		TRANSLATE_ (Numeric );
+		TRANSLATE_ (Newline );
+		TRANSLATE_ (Register);
+		TRANSLATE_ (Address );
+		TRANSLATE_ (Label   );
 
 		default: break;
 	}

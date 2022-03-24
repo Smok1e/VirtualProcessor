@@ -56,11 +56,13 @@ public:
 	void          setListingStream (std::ostream* stream);
 	std::ostream* getListingStream ();
 
-	void assemble   ();
+	void compile ();
+
 	void dumpTokens ();
 
 private:
 	ProgramContainer m_program;
+	size_t           m_program_index;
 	int              m_next_token_index;
 	std::ostream*    m_listing_stream;
 
@@ -98,13 +100,28 @@ private:
 		const char* filename;
 	} m_source_code;
 
-	listing_settings m_listing_settings;
+	struct name_pair
+	{
+		const char* name_begin;
+		const char* name_end;
+		size_t      name_len;
 
-	TokenType                    determineTokenType      (const char* begin, const char* end);
-	stack_value_t                interpretNumberToken    (const char* begin, size_t len);
-	stack_value_t                interpretCommandToken   (const char* begin, size_t len);
-	stack_value_t                interpretRegisterToken  (const char* begin, size_t len);
-	source_code_container::token interptetToken          (const char* begin, const char* end, size_t number, size_t line_number);
+		size_t address;
+	};
+
+	std::vector <name_pair> m_name_table;
+
+	listing_settings m_listing_settings;
+	
+	bool assemble ();
+
+	TokenType                    determineTokenType     (const char* begin, const char* end);
+	stack_value_t                interpretNumberToken   (const char* begin, size_t len);
+	stack_value_t                interpretCommandToken  (const char* begin, size_t len);
+	stack_value_t                interpretRegisterToken (const char* begin, size_t len);
+	stack_value_t                interpretAddressToken  (const char* begin, size_t len);
+	stack_value_t                interpretLabelToken    (const char* begin, size_t len);
+	source_code_container::token interptetToken         (const char* begin, const char* end, size_t number, size_t line_number);
 
 	void compileInstruction (const std::initializer_list <TokenType>& args);
 

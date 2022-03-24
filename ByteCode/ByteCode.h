@@ -11,7 +11,7 @@
 
 //------------------------------
 
-typedef          __int8             stack_value_t;
+typedef          __int32            stack_value_t;
 typedef unsigned __int8             byte_t;
 typedef std::vector <stack_value_t> program_t;
 
@@ -62,6 +62,7 @@ enum class TokenType: token_base_t
 	Register = 0b00000100,
 	Newline  = 0b00001000,
 	Address  = 0b10000000,
+	Label    = 0b01000000,
 
 	None     = 0b11111111
 };
@@ -97,6 +98,8 @@ extern const char*            COMMENT_SEQUENCE;
 extern const unsigned         COMMENT_SEQUENCE_LEN;
 extern const char*            REGISTER_SEQUENCE;
 extern const unsigned         REGISTER_SEQUENCE_LEN;
+extern const char*            ADDRESS_SEQUENCE;
+extern const unsigned         ADDRESS_SEQUENCE_LEN;
 
 //     const unsigned         NUMBERS_ACURACY       = 3;
        const unsigned         NUMBERS_MODIFIER	    = 1; //256;

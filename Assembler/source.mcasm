@@ -1,11 +1,7 @@
-push 9
-pop @bx
+test:
+	push 123
+	out
 
-push @bx + 3
-out
-
-push 3
-out
-
-push @bx
-out
+not_test:
+	hlp
+	hlt
