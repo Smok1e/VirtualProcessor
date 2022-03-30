@@ -14,6 +14,14 @@ else if (args.arg1_type == TokenType::Register) regSet (nextByte (), value);
 
 //------------------------------
 
+#define JUMP_IF__(condition__)                   \
+stack_value_t addr = nextStackValue ();			 \
+stack_value_t rgt = popValue ();                 \
+stack_value_t lft = popValue ();	             \
+if (condition__) { jump (addr); }
+
+//------------------------------
+
 #define TOKENS_(...) std::initializer_list <TokenType> (__VA_ARGS__)
 
 #define COMMANDS_DEFINES_ \
@@ -37,6 +45,14 @@ ACD_ (sqr,  TOKENS_ ({                                                          
 ACD_ (sqrt, TOKENS_ ({                                                                                                                      }), "sqrt - square root from top stack value",             { double number = popNumber (); push (static_cast <double> (sqrt (number)));                                                                                                                                         }) \
 ACD_ (sin,  TOKENS_ ({                                                                                                                      }), "sin - sin function of top stack value as angle",      { push (sin (popNumber ()));                                                                                                                                                                                         }) \
 ACD_ (cos,  TOKENS_ ({                                                                                                                      }), "cos - cos function of top stack value as angle",      { push (cos (popNumber ()));                                                                                                                                                                                         }) \
-ACD_ (test, TOKENS_ ({                                                                                                                      }), "test - print debug test marker",                      { output ("Test marker #%d\n", ++m_test_marker);                                                                                                                                                                     })
+ACD_ (test, TOKENS_ ({                                                                                                                      }), "test - print debug test marker",                      { output ("Test marker #%d\n", ++m_test_marker);                                                                                                                                                                     }) \
+ACD_ (jmp,  TOKENS_ ({TokenType::LabelRef                                                                                                   }), "jmp <label> - jump to a label point",                 { jump (nextStackValue ());                                                                                                                                                                                          }) \
+ACD_ (je,   TOKENS_ ({TokenType::LabelRef                                                                                                   }), "je <label> - jump to a label point if lft == rgt",    { JUMP_IF__ (lft == rgt)                                                                                                                                                                                             }) \
+ACD_ (jne,  TOKENS_ ({TokenType::LabelRef                                                                                                   }), "jne <label> - jump to a label point if lft != rgt",   { JUMP_IF__ (lft != rgt)                                                                                                                                                                                             }) \
+ACD_ (ja,   TOKENS_ ({TokenType::LabelRef                                                                                                   }), "jb <label> - jump to a label point if lft > rgt",     { JUMP_IF__ (lft >  rgt)                                                                                                                                                                                             }) \
+ACD_ (jb,   TOKENS_ ({TokenType::LabelRef                                                                                                   }), "ja <label> - jump to a label point if lft < rgt",     { JUMP_IF__ (lft <  rgt)                                                                                                                                                                                             }) \
+ACD_ (jae,  TOKENS_ ({TokenType::LabelRef                                                                                                   }), "jae <label> - jump to a label point if lft >= rgt",   { JUMP_IF__ (lft >= rgt)                                                                                                                                                                                             }) \
+ACD_ (jbe,  TOKENS_ ({TokenType::LabelRef                                                                                                   }), "jbe <label> - jump to a label point if lft <= rgt",   { JUMP_IF__ (lft <= rgt)                                                                                                                                                                                             }) \
+ACD_ (jt,   TOKENS_ ({TokenType::LabelRef                                                                                                   }), "jt <label> - jump if current time cecond is even",    { stack_value_t addr = nextStackValue (); if ((time (0) % 2) == 0) jump (addr);                                                                                                                                      }) \
 
 //------------------------------

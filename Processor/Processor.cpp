@@ -208,8 +208,14 @@ void Processor::jump (uintptr_t addr)
 {
 	if (addr >= m_program.bytes ())
 	{
-		error ("Fatal error: Invalid address (0x%08X), maximum possible address is 0x%08X", addr, m_program.bytes ());
+		error ("Fatal error: Invalid address (0x%08X), maximum possible address is 0x%08X\n", addr, m_program.bytes ());
 		throw processor_error ("Invalid address (0x%08X), maximum possible address is 0x%08X", addr, m_program.bytes ());
+	}
+
+	if (addr == ASSEMBLER_INVALID_ADDRESS)
+	{
+		error ("Fatal error: Invalid address (0x%08X)\n", addr);
+		throw processor_error ("Invalid address (0x%08X)", addr);
 	}
 
 	m_next_data_index = addr;

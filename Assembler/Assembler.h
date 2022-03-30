@@ -110,6 +110,7 @@ private:
 	};
 
 	std::vector <name_pair> m_name_table;
+	bool                    m_empty_jumps;
 
 	listing_settings m_listing_settings;
 	
@@ -121,9 +122,13 @@ private:
 	stack_value_t                interpretRegisterToken (const char* begin, size_t len);
 	stack_value_t                interpretAddressToken  (const char* begin, size_t len);
 	stack_value_t                interpretLabelToken    (const char* begin, size_t len);
+	stack_value_t                interpretLabelRefToken (const char* begin, size_t len);
 	source_code_container::token interptetToken         (const char* begin, const char* end, size_t number, size_t line_number);
 
 	void compileInstruction (const std::initializer_list <TokenType>& args);
+
+	void   addLabel  (const char* name_begin, const char* name_end, size_t addr);
+	size_t findLabel (const char* name_begin, const char* name_end);
 
 	static const char* StrTokenType (TokenType type);
 

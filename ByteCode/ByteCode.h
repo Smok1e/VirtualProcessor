@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <limits>
 
 #include "Utils.hpp"
 #include "Commands.h"
@@ -61,8 +62,9 @@ enum class TokenType: token_base_t
 	Numeric  = 0b00000010,
 	Register = 0b00000100,
 	Newline  = 0b00001000,
-	Address  = 0b10000000,
-	Label    = 0b01000000,
+	Address  = 0b00010000,
+	Label    = 0b00100000,
+	LabelRef = 0b01000000,
 
 	None     = 0b11111111
 };
@@ -101,13 +103,14 @@ extern const unsigned         REGISTER_SEQUENCE_LEN;
 extern const char*            ADDRESS_SEQUENCE;
 extern const unsigned         ADDRESS_SEQUENCE_LEN;
 
-//     const unsigned         NUMBERS_ACURACY       = 3;
-       const unsigned         NUMBERS_MODIFIER	    = 1; //256;
-       const unsigned         ASSEMBLER_VERSION     = 17;
-       const unsigned         ASSEMBLER_BUFFSIZE    = 1024;
-	   const unsigned         PROCESSOR_MEMORY_SIZE = 2048;
-       const unsigned __int32 PROGRAM_SIGNATURE     = TXT232UINT ("Meow"); // MEOW - Mcasm Executable Outrage Waffle
-	   const unsigned __int8  REGISTERS_COUNT       = 4;
+//     const unsigned         NUMBERS_ACURACY           = 3;
+       const unsigned         NUMBERS_MODIFIER	        = 1; //256;
+       const unsigned         ASSEMBLER_VERSION         = 17;
+       const unsigned         ASSEMBLER_BUFFSIZE        = 1024;
+	   const unsigned         PROCESSOR_MEMORY_SIZE     = 2048;
+       const unsigned __int32 PROGRAM_SIGNATURE         = TXT232UINT ("Meow"); // MEOW - Mcasm Executable Outrage Waffle
+	   const unsigned __int8  REGISTERS_COUNT           = 4;
+	   const size_t           ASSEMBLER_INVALID_ADDRESS = 0; // null address can't be valid, because there is assembler version info stored
 
 //------------------------------
 

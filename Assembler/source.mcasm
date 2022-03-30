@@ -1,7 +1,13 @@
-test:
-	push 123
+main:
+	jt :he 
+
+	push 1337
 	out
 
-not_test:
-	hlp
+	hlt
+
+he:
+	push 228
+	out
+
 	hlt
