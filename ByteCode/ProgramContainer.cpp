@@ -3,11 +3,11 @@
 //------------------------------
 
 ProgramContainer::ProgramContainer ():
-	m_data  ()
+	m_data ()
 {}
 
 ProgramContainer::ProgramContainer (const ProgramContainer& copy):
-	m_data  (copy.m_data)
+	m_data (copy.m_data)
 {}
 
 //------------------------------

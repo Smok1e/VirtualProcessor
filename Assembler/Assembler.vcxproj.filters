@@ -49,10 +49,13 @@
     <None Include="qe.mcasm">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="source.mcasm">
+    <None Include="square_table.mcasm">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="side.mcasm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="source.mcasm">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

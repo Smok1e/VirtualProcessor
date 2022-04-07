@@ -60,7 +60,10 @@ private:
 	
 	double m_retval;
 
-	stack_value_t m_registers[REGISTERS_COUNT];
+	stack_value_t m_registers [REGISTERS_COUNT];
+	byte_t        m_memory    [PROCESSOR_MEMORY_SIZE];
+
+	int m_test_marker;
 
 	// IO
 	void print (std::ostream* stream, const char* format, va_list args);
@@ -71,13 +74,17 @@ private:
 	stack_value_t                       nextStackValue  ();
 	byte_type                           nextByteType    ();
 	byte_t                              nextByte        ();
+	
+	stack_value_t* nextAddress (byte_type args);
 
 	void jump (uintptr_t addr);
 
+
 	// Stack
-	void          push           (stack_value_t value );
-	void          push           (ByteCode      cmd   );
-	void          push           (double        number);
+	void push        (stack_value_t value );
+	void pushCommand (ByteCode      cmd   );
+	void pushNumber  (double        number);
+
 	stack_value_t popValue       ();
 	ByteCode      popInstruction ();
 	double        popNumber      ();
@@ -86,11 +93,16 @@ private:
 
 	// Registers
 	void          regSet            (size_t index, stack_value_t value );
-	void          regSet            (size_t index, ByteCode      cmd   );
-	void          regSet            (size_t index, double        number);
+	void          regSetCommand     (size_t index, ByteCode      cmd   );
+	void          regSetNumber      (size_t index, double        number);
+
 	stack_value_t regGetStackValue  (size_t index);
 	ByteCode      regGetInstruction (size_t index);
 	double        regGetNumber      (size_t index);
+
+	// Memory
+	void          memSet (double address, stack_value_t value);
+	stack_value_t memGet (double address);
 
 	// Other
 	void processInstruction (ByteCode cmd);

@@ -24,3 +24,12 @@ value_t ProgramContainer::get (size_t index_in_bytes) const
 }
 
 //------------------------------
+
+template <typename value_t>
+void ProgramContainer::set (size_t index_in_bytes, value_t value)
+{
+	if (index_in_bytes + sizeof (value_t) > bytes ()) m_data.resize (index_in_bytes + sizeof (value_t));
+	*reinterpret_cast <value_t*> (m_data.data () + index_in_bytes) = value;
+}
+
+//------------------------------

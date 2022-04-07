@@ -15,17 +15,21 @@ Assembler::listing_settings DEFAULT_LISTINGS_SETTINGS =
 	3,    // line digits
 	4,    // address digits
 	6,    // max content bytes per line
-	true  // print content binary if true, else hexademically
+	false // print content binary if true, else hexademically
 };
 
 //------------------------------
 
 Assembler::Assembler ():
 	m_program          (),
+	m_program_index    (0),
 	m_source_code      ({0}),
 	m_next_token_index (0),
 	m_listing_stream   (nullptr),
-	m_listing_settings (DEFAULT_LISTINGS_SETTINGS)
+	m_listing_settings (DEFAULT_LISTINGS_SETTINGS),
+	m_name_table       {},
+	m_empty_jumps      (false),
+	m_pass_number      (0)
 {}
 
 //------------------------------
@@ -129,22 +133,38 @@ Assembler::listing_settings Assembler::getListingSettings ()
 
 //------------------------------
 
-void Assembler::assemble ()
+void Assembler::compile ()
+{
+	m_pass_number = 0;
+	m_name_table.clear ();
+	m_program.clear ();
+	while (assemble ()) 
+		m_pass_number++;
+}
+
+//------------------------------
+
+bool Assembler::assemble ()
 {
 	if (!m_source_code.tokens)
 		throw assembler_error ("No source to complie");
 
-	m_program.clear ();
+	m_empty_jumps      = false;
+	m_program_index    = 0;
+	m_next_token_index = 0;
 
-	m_program.append (static_cast <stack_value_t> (ASSEMBLER_VERSION));
+	listing ("\nAssembling pass #%zu:\n", m_pass_number);
+
+	m_program.set (m_program_index, static_cast <stack_value_t> (ASSEMBLER_VERSION));
+	m_program_index += sizeof (stack_value_t);
+
 	listing_line (-1, 0, m_program.begin (), sizeof (stack_value_t), "[version]");
 
-	bool hlt_found = false;
 	while (m_next_token_index < m_source_code.tokens_count)
 	{
-		size_t prev_addr = m_program.bytes ();
+		size_t prev_addr = m_program_index;
 
-		source_code_container::token token = nextToken (TokenType::Keyword | TokenType::Newline);
+		source_code_container::token token = nextToken (TokenType::Keyword | TokenType::Newline | TokenType::Label);
 		source_code_container::line  line  = m_source_code.lines[token.line_number];
 
 		if (token.type == TokenType::Keyword)
@@ -154,7 +174,8 @@ void Assembler::assemble ()
 			if (cmd >= ByteCode::amount)
 				throw assembler_error ("Unknown command '%.*s'", token.len, token.begin);
 
-			m_program.append (cmd);
+			m_program.set (m_program_index, cmd);
+			m_program_index += sizeof (cmd);
 
 			#define ACD_(command, args, desc, ...) case ByteCode::##command: { compileInstruction (args); break; };
 			switch (cmd)
@@ -166,30 +187,27 @@ void Assembler::assemble ()
 			}
 			#undef ACD_
 
-			switch (cmd)
-			{
-				case ByteCode::hlt:
-					hlt_found = true;
-					break;
-
-				default: 
-					break;
-			}
-
 			nextToken (TokenType::Newline);
 		}
 
-		listing_line (line.number, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, line.begin, line.len);
+		else if (token.type == TokenType::Label)
+		{
+			addLabel (token.begin, token.end, m_program_index);
+			nextToken (TokenType::Newline);
+		}
+
+		listing_line (line.number, prev_addr, m_program.begin () + prev_addr, m_program_index - prev_addr, line.begin, line.len);
 	}
 
-	if (!hlt_found)
-	{
-		size_t prev_addr = m_program.bytes ();
-		m_program.append (ByteCode::hlt);
-		listing_line (-1, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, "[auto haltion]");
-	}
+	size_t prev_addr = m_program.bytes ();
+	m_program.set (m_program_index, ByteCode::hlt);
+	m_program_index += sizeof (ByteCode::hlt);
+
+	listing_line (-1, prev_addr, m_program.begin () + prev_addr, m_program.bytes () - prev_addr, "[haltion - end of code]");
 
 	m_program.shrink ();
+
+	return m_empty_jumps;
 }
 
 //------------------------------
@@ -279,7 +297,7 @@ void Assembler::releaseTokens ()
 
 TokenType Assembler::determineTokenType (const char* begin, const char* end)
 {
-	if (IsDoubleDigit (*begin))
+	if (IsDoubleDigit (*begin) || *begin == '\'')
 		return TokenType::Numeric;
 
 	if (strchr (LINE_DELIMITERS, *begin))
@@ -287,6 +305,15 @@ TokenType Assembler::determineTokenType (const char* begin, const char* end)
 
 	if (strncmp (begin, REGISTER_SEQUENCE, REGISTER_SEQUENCE_LEN) == 0)
 		return TokenType::Register;
+
+	if (strncmp (begin, ADDRESS_SEQUENCE, ADDRESS_SEQUENCE_LEN) == 0)
+		return TokenType::Address;
+
+	if (*(end-1) == ':')
+		return TokenType::Label;
+
+	if (*begin == ':')
+		return TokenType::LabelRef;
 
 	return TokenType::Keyword;
 }
@@ -297,6 +324,9 @@ stack_value_t Assembler::interpretNumberToken (const char* str, size_t len)
 {
 	if (len > 2 && strncmp (str, "0x", 2) == 0)
 		return static_cast <stack_value_t> (strtol (str, nullptr, 16) * NUMBERS_MODIFIER);
+
+	if (len == 3 && *str == '\'' && str[2] == '\'')
+		return static_cast <stack_value_t> (str[1] * NUMBERS_MODIFIER);
 
 	if (!IsNumeric (str, len))
 		throw assembler_error ("Syntax error: '%.*s' is not numeric", len, str);
@@ -341,6 +371,27 @@ stack_value_t Assembler::interpretRegisterToken (const char* str, size_t len)
 
 //------------------------------
 
+stack_value_t Assembler::interpretAddressToken (const char* str, size_t len)
+{
+	return static_cast <stack_value_t> (0xDEADADD3);
+}
+
+//------------------------------
+
+stack_value_t Assembler::interpretLabelToken (const char* str, size_t len)
+{
+	return static_cast <stack_value_t> (0xB16B00B5);
+}
+
+//------------------------------
+
+stack_value_t Assembler::interpretLabelRefToken (const char* str, size_t len)
+{
+	return static_cast <stack_value_t> (0xFEEDFACE);
+}
+
+//------------------------------
+
 Assembler::source_code_container::token Assembler::interptetToken (const char* begin, const char* end, size_t number, size_t line_number)
 {
 	source_code_container::token token = {};
@@ -353,21 +404,14 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 	
 	switch (token.type)
 	{
-		case TokenType::Keyword:
-			token.value = interpretCommandToken (begin, token.len);
-			break;
+		case TokenType::Keyword:  token.value = interpretCommandToken  (begin, token.len); break;
+		case TokenType::Numeric:  token.value = interpretNumberToken   (begin, token.len); break;
+		case TokenType::Register: token.value = interpretRegisterToken (begin, token.len); break;	
+		case TokenType::Address:  token.value = interpretAddressToken  (begin, token.len); break;
+		case TokenType::Label:    token.value = interpretLabelToken    (begin, token.len); break;
+		case TokenType::LabelRef: token.value = interpretLabelRefToken (begin, token.len); break;
 
-		case TokenType::Numeric:
-			token.value = interpretNumberToken (begin, token.len);
-			break;
-
-		case TokenType::Register:
-			token.value = interpretRegisterToken (begin, token.len);
-			break;	
-
-		default:
-			assembler_assert ("Unknown token type" && false);
-			break;
+		default: assembler_assert ("Unknown token type" && false); break;
 	}
 
 	return token;
@@ -375,13 +419,77 @@ Assembler::source_code_container::token Assembler::interptetToken (const char* b
 
 //------------------------------
 
+void Assembler::addLabel (const char* name_begin, const char* name_end, size_t addr)
+{
+	name_end--; // "label:" -> "label"
+	assembler_assert (name_begin < name_end);
+
+	size_t len = name_end - name_begin;
+	auto iter = std::find_if 
+	(
+		m_name_table.begin (), 
+		m_name_table.end   (), 
+
+		[&name_begin, &len](const name_pair& elem)
+		{ 
+			return strncmp (elem.name_begin, name_begin, len) == 0; 
+		}
+	);
+
+	if (iter != m_name_table.end ())
+		return;
+
+	name_pair pair = {};
+	pair.name_begin = name_begin;
+	pair.name_end   = name_end;
+	pair.name_len   = len;
+
+	pair.address = addr;
+
+	m_name_table.push_back (pair);
+}
+
+//------------------------------
+
+size_t Assembler::findLabel (const char* name_begin, const char* name_end)
+{
+	name_begin++; // ":label" -> "label"
+	assembler_assert (name_begin < name_end);
+
+	size_t len = name_end - name_begin;
+	auto iter = std::find_if 
+	(
+		m_name_table.begin (), 
+		m_name_table.end   (), 
+
+		[&name_begin, &len](const name_pair& elem)
+		{ 
+			return strncmp (elem.name_begin, name_begin, len) == 0; 
+		}
+	);
+
+	if (iter == m_name_table.end ())
+		return ASSEMBLER_INVALID_ADDRESS;
+
+	return iter -> address;
+}
+
+//------------------------------
+
 void Assembler::compileInstruction (const std::initializer_list <TokenType>& args)
 {
 	byte_type type = {};
+	if (followingToken ().type == TokenType::Address)
+	{
+		nextToken ();
+		type.is_address = true;
+	}
+
 	if (args.size () > 0) type.arg1_type = followingToken (*(args.begin () + 0), 0).type;
 	if (args.size () > 1) type.arg2_type = followingToken (*(args.begin () + 1), 1).type;
 
-	m_program.append (type);
+	m_program.set (m_program_index, type);
+	m_program_index += sizeof (type);
 
 	for (const auto& argtype: args)
 	{
@@ -392,15 +500,38 @@ void Assembler::compileInstruction (const std::initializer_list <TokenType>& arg
 		switch (token.type)
 		{
 			case TokenType::Keyword:
-				m_program.append (static_cast <ByteCode> (token.value));
+				m_program.set (m_program_index, static_cast <ByteCode> (token.value));
+				m_program_index += sizeof (ByteCode);
+
 				break;
 
 			case TokenType::Numeric:
-				m_program.append (token.value);
+				m_program.set (m_program_index, token.value);
+				m_program_index += sizeof (token.value);
+
 				break;
 
 			case TokenType::Register:
-				m_program.append (static_cast <byte_t> (token.value));
+				m_program.set (m_program_index, static_cast <byte_t> (token.value));
+				m_program_index += sizeof (byte_t);
+
+				break;
+
+			case TokenType::LabelRef:
+				{
+					size_t addr = findLabel (token.begin, token.end);
+					if (addr == ASSEMBLER_INVALID_ADDRESS)
+					{
+						if (m_pass_number > 0)
+							throw assembler_error ("Can't resolve label address after a first pass");
+
+						m_empty_jumps = true;
+					}
+
+					m_program.set (m_program_index, static_cast <stack_value_t> (addr));
+					m_program_index += sizeof (stack_value_t);
+				}
+
 				break;
 
 			default:
@@ -417,10 +548,13 @@ const char* Assembler::StrTokenType (TokenType type)
 
 	switch (type)
 	{
-		TRANSLATE_ (Keyword  );
-		TRANSLATE_ (Numeric  );
-		TRANSLATE_ (Newline  );
-		TRANSLATE_ (Register );
+		TRANSLATE_ (Keyword );
+		TRANSLATE_ (Numeric );
+		TRANSLATE_ (Newline );
+		TRANSLATE_ (Register);
+		TRANSLATE_ (Address );
+		TRANSLATE_ (Label   );
+		TRANSLATE_ (LabelRef);
 
 		default: break;
 	}

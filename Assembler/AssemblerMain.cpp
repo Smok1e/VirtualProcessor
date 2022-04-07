@@ -19,13 +19,11 @@ int main ()
 
 		//assembler.dumpTokens ();
 
-		assembler.assemble         ();
+		assembler.compile ();
 
 		assembler.getProgram ().save ("program.bin");
 		printf ("Program saved as test.bin\n\n");
 
-		printf ("Listing:\n");
-		printf (listing.str ().c_str ());
 	}
 
 	catch (assembler_error err)
@@ -37,6 +35,9 @@ int main ()
 	{
 		printf ("Unexpected exception thrown: %s\n", exc.what ());
 	}
+
+	printf ("Listing:\n");
+	printf (listing.str ().c_str ());
 }
 
 //------------------------------

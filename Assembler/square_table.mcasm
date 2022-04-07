@@ -1,0 +1,32 @@
+in 
+pop @ax
+
+in						 
+pop @bx
+
+push @ax
+push @bx
+
+jbe :begin
+jmp :end
+
+begin:
+	push @ax
+	push @bx
+
+	ja :end
+
+	push @ax
+	push @ax
+	mul
+	out
+
+	push @ax
+	push 1
+	add
+	pop @ax
+
+	jmp :begin
+
+end:
+	hlt
