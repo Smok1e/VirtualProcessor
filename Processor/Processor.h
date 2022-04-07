@@ -60,8 +60,8 @@ private:
 	
 	double m_retval;
 
-	stack_value_t m_registers[REGISTERS_COUNT];
-	byte_t        m_memory   [PROCESSOR_MEMORY_SIZE];
+	stack_value_t m_registers [REGISTERS_COUNT];
+	byte_t        m_memory    [PROCESSOR_MEMORY_SIZE];
 
 	int m_test_marker;
 

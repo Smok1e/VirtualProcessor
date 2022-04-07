@@ -165,6 +165,7 @@
   <ItemGroup>
     <None Include="qe.mcasm" />
     <None Include="source.mcasm" />
+    <None Include="square_table.mcasm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

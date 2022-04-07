@@ -28,7 +28,8 @@ Assembler::Assembler ():
 	m_listing_stream   (nullptr),
 	m_listing_settings (DEFAULT_LISTINGS_SETTINGS),
 	m_name_table       {},
-	m_empty_jumps      (false)
+	m_empty_jumps      (false),
+	m_pass_number      (0)
 {}
 
 //------------------------------
@@ -134,9 +135,11 @@ Assembler::listing_settings Assembler::getListingSettings ()
 
 void Assembler::compile ()
 {
+	m_pass_number = 0;
 	m_name_table.clear ();
 	m_program.clear ();
-	while (assemble ());
+	while (assemble ()) 
+		m_pass_number++;
 }
 
 //------------------------------
@@ -149,6 +152,8 @@ bool Assembler::assemble ()
 	m_empty_jumps      = false;
 	m_program_index    = 0;
 	m_next_token_index = 0;
+
+	listing ("\nAssembling pass #%zu:\n", m_pass_number);
 
 	m_program.set (m_program_index, static_cast <stack_value_t> (ASSEMBLER_VERSION));
 	m_program_index += sizeof (stack_value_t);
@@ -292,7 +297,7 @@ void Assembler::releaseTokens ()
 
 TokenType Assembler::determineTokenType (const char* begin, const char* end)
 {
-	if (IsDoubleDigit (*begin))
+	if (IsDoubleDigit (*begin) || *begin == '\'')
 		return TokenType::Numeric;
 
 	if (strchr (LINE_DELIMITERS, *begin))
@@ -319,6 +324,9 @@ stack_value_t Assembler::interpretNumberToken (const char* str, size_t len)
 {
 	if (len > 2 && strncmp (str, "0x", 2) == 0)
 		return static_cast <stack_value_t> (strtol (str, nullptr, 16) * NUMBERS_MODIFIER);
+
+	if (len == 3 && *str == '\'' && str[2] == '\'')
+		return static_cast <stack_value_t> (str[1] * NUMBERS_MODIFIER);
 
 	if (!IsNumeric (str, len))
 		throw assembler_error ("Syntax error: '%.*s' is not numeric", len, str);
@@ -514,7 +522,9 @@ void Assembler::compileInstruction (const std::initializer_list <TokenType>& arg
 					size_t addr = findLabel (token.begin, token.end);
 					if (addr == ASSEMBLER_INVALID_ADDRESS)
 					{
-						printf ("Found an empty jump '%.*s'!\n", token.len, token.begin);
+						if (m_pass_number > 0)
+							throw assembler_error ("Can't resolve label address after a first pass");
+
 						m_empty_jumps = true;
 					}
 

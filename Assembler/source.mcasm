@@ -1,13 +1,107 @@
-main:
-	jt :he 
+push 10
+pop @ax
 
-	push 1337
-	out
+mov @ax, @bx
 
-	hlt
+>---------------------------------------
 
-he:
-	push 228
-	out
+push 'H'
+pop @cx
+call :putchar
 
-	hlt
+push 'e'
+pop @cx
+call :putchar
+
+push 'l'
+pop @cx
+call :putchar
+
+push 'l'
+pop @cx
+call :putchar
+
+push 'o'
+pop @cx
+call :putchar
+
+push 44
+pop @cx
+call :putchar
+
+push 32
+pop @cx
+call :putchar
+
+push 't'
+pop @cx
+call :putchar
+
+push 'e'
+pop @cx
+call :putchar
+
+push 's'
+pop @cx
+call :putchar
+
+push 't'
+pop @cx
+call :putchar
+
+push '!'
+pop @cx
+call :putchar
+
+call :endstr
+call :print
+
+hlt
+
+>---------------------------------------
+
+putchar:
+	push @cx
+	pop [ @bx ]
+
+	push @bx
+	valsz
+	add
+	pop @bx
+
+	ret
+
+>---------------------------------------
+
+endstr:
+	push 0
+	pop [ @bx ]
+
+	ret
+
+>---------------------------------------
+
+print:
+	mov @ax, @dx
+
+	jmp :print_cycle_begin
+	print_cycle_begin:
+		push [ @dx ]
+		push 0
+
+		je :print_cycle_end
+
+		push [ @dx ]
+		chout
+
+		push @dx
+		valsz
+		add
+		pop @dx
+
+		jmp :print_cycle_begin
+
+	print_cycle_end:
+		ret
+
+>---------------------------------------

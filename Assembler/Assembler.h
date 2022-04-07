@@ -65,6 +65,7 @@ private:
 	size_t           m_program_index;
 	int              m_next_token_index;
 	std::ostream*    m_listing_stream;
+	size_t           m_pass_number;
 
 	struct source_code_container
 	{

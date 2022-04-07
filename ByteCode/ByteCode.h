@@ -104,8 +104,8 @@ extern const char*            ADDRESS_SEQUENCE;
 extern const unsigned         ADDRESS_SEQUENCE_LEN;
 
 //     const unsigned         NUMBERS_ACURACY           = 3;
-       const unsigned         NUMBERS_MODIFIER	        = 1; //256;
-       const unsigned         ASSEMBLER_VERSION         = 17;
+       const unsigned         NUMBERS_MODIFIER	        = 0x100; // == 256;
+       const unsigned         ASSEMBLER_VERSION         = 21;
        const unsigned         ASSEMBLER_BUFFSIZE        = 1024;
 	   const unsigned         PROCESSOR_MEMORY_SIZE     = 2048;
        const unsigned __int32 PROGRAM_SIGNATURE         = TXT232UINT ("Meow"); // MEOW - Mcasm Executable Outrage Waffle
