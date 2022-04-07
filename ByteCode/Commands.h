@@ -195,7 +195,7 @@ ACD_ (jne, TOKENS_ ({TokenType::LabelRef}),                                     
 ACD_ (ja, TOKENS_ ({TokenType::LabelRef}),                                                                                                                                                        \
 "jb <label> - jump to a label point if lft > rgt",                                                                                                                                                \
 {                                                                                                                                                                                                 \
-    JUMP_IF__ (lft >  rgt)                                                                                                                                                                        \
+    JUMP_IF__ (lft > rgt)                                                                                                                                                                        \
 })                                                                                                                                                                                                \
                                                                                                                                                                                                   \
 ACD_ (jb, TOKENS_ ({TokenType::LabelRef}),                                                                                                                                                        \
@@ -256,6 +256,33 @@ ACD_ (mov, TOKENS_ ({TokenType::Register, TokenType::Register}),                
 {                                                                                                                                                                                                 \
     stack_value_t val = regGetStackValue (nextByte ());                                                                                                                                           \
     regSet (nextByte (), val);                                                                                                                                                                    \
-})
-
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (sleep, TOKENS_ (),                                                                                                                                                                          \
+"sleep - freeze program for N msec",                                                                                                                                                              \
+{                                                                                                                                                                                                 \
+    double msec = popNumber ();                                                                                                                                                                   \
+    std::this_thread::sleep_for (std::chrono::duration <double, std::milli> (msec));                                                                                                              \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (wnd, TOKENS_ ({}),                                                                                                                                                                          \
+"wnd - open a display window with two top stack values as width and height",                                                                                                                      \
+{                                                                                                                                                                                                 \
+    double size_y = popNumber ();                                                                                                                                                                 \
+    double size_x = popNumber ();                                                                                                                                                                 \
+    openWindow (size_x, size_y);                                                                                                                                                                  \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (display, TOKENS_ ({TokenType::Numeric | TokenType::Register}),                                                                                                                              \
+"display <numeric/register> - display memory data in opened window, starting from address given in arguments",                                                                                    \
+{                                                                                                                                                                                                 \
+    display (static_cast <double> (*nextAddress (args)) / NUMBERS_MODIFIER);                                                                                                                      \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (floor, TOKENS_ ({}),                                                                                                                                                                        \
+"floor - floor",                                                                                                                                                                                  \
+{                                                                                                                                                                                                 \
+    pushNumber (floor (popNumber ()));                                                                                                                                                            \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  
 //------------------------------

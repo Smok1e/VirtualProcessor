@@ -104,13 +104,14 @@ extern const char*            ADDRESS_SEQUENCE;
 extern const unsigned         ADDRESS_SEQUENCE_LEN;
 
 //     const unsigned         NUMBERS_ACURACY           = 3;
-       const unsigned         NUMBERS_MODIFIER	        = 0x100; // == 256;
+       const unsigned         NUMBERS_MODIFIER	        = 0x100;               // == 256;
        const unsigned         ASSEMBLER_VERSION         = 21;
        const unsigned         ASSEMBLER_BUFFSIZE        = 1024;
-	   const unsigned         PROCESSOR_MEMORY_SIZE     = 2048;
+	   const unsigned         PROCESSOR_MEMORY_SIZE     = 64 * 1024;           // 64K
+       const unsigned         PROCESSOR_PIXEL_SCALE     = 10;
        const unsigned __int32 PROGRAM_SIGNATURE         = TXT232UINT ("Meow"); // MEOW - Mcasm Executable Outrage Waffle
 	   const unsigned __int8  REGISTERS_COUNT           = 4;
-	   const size_t           ASSEMBLER_INVALID_ADDRESS = 0; // null address can't be valid, because there is assembler version info stored
+	   const size_t           ASSEMBLER_INVALID_ADDRESS = 0;                   // null address can't be valid, because there is assembler version info stored
 
 //------------------------------
 

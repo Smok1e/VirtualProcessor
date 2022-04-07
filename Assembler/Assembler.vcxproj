@@ -164,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="qe.mcasm" />
+    <None Include="print.mcasm" />
     <None Include="source.mcasm" />
     <None Include="square_table.mcasm" />
   </ItemGroup>

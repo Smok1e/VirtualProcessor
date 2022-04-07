@@ -1,7 +1,31 @@
 #include <string>
+#include <thread>
 
 #include "Processor.h"
 #include "Utils.hpp"
+
+#include <TXLib.h>
+#include <shellscalingapi.h>
+
+//------------------------------
+
+int InitProcessor ()
+{
+	HMODULE module = LoadLibraryA ("Shcore.dll");
+	assert (module);
+
+	HRESULT (WINAPI* SetProcessDpiAwareness) (PROCESS_DPI_AWARENESS value) = reinterpret_cast <HRESULT (WINAPI*) (PROCESS_DPI_AWARENESS value)> (GetProcAddress (module, "SetProcessDpiAwareness"));
+	assert (SetProcessDpiAwareness);
+
+	SetProcessDpiAwareness (PROCESS_PER_MONITOR_DPI_AWARE);
+
+	FreeLibrary (module);
+
+	_txConsole = -1;
+	return 1;
+}
+
+int _ProcessorInitialized = InitProcessor ();
 
 //------------------------------
 
@@ -200,6 +224,8 @@ stack_value_t* Processor::nextAddress (byte_type args)
 			return &tmp_buff;
 		}
 	}
+
+	return nullptr;
 }
 
 //------------------------------
@@ -370,6 +396,57 @@ stack_value_t Processor::memGet (double address)
 	return *reinterpret_cast <stack_value_t*> (m_memory + addr);	
 }
 
+//------------------------------
+
+void Processor::openWindow (double size_x, double size_y)
+{
+	txCreateWindow (static_cast <int> (size_x * (PROCESSOR_PIXEL_SCALE + 1)), static_cast <int> (size_y * (PROCESSOR_PIXEL_SCALE + 1)));
+	SetWindowTextA (txWindow (), "MCASM Virtual processor display window");
+
+	HICON icon = (HICON) LoadImageA (NULL, "icon.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE | LR_SHARED);
+	if (icon)
+	{
+		SendMessageA (txWindow (), WM_SETICON, ICON_SMALL, (LPARAM) icon);
+		SendMessageA (txWindow (), WM_SETICON, ICON_BIG,   (LPARAM) icon);
+	}
+}
+
+void Processor::display (double begin_addr)
+{
+	static COLORREF background_color = TX_BLACK;
+	static COLORREF foreground_color = TX_WHITE;
+	static COLORREF frame_color      = RGB (64, 64, 64);
+
+	if (!txWindow ())
+		return;
+
+	HDC background = txLoadImage ("background.bmp");
+	StretchBlt (txDC (), 0, 0, txGetExtentX (), txGetExtentY (), background, 0, 0, txGetExtentX (background), txGetExtentY (background), SRCCOPY);
+	txDeleteDC (background);
+
+	//txSetFillColor (frame_color);
+	//txClear        ();
+
+	stack_value_t* buffer = reinterpret_cast <stack_value_t*> (m_memory + static_cast <size_t> (floor (begin_addr)));
+	int size_x = txGetExtentX () / (PROCESSOR_PIXEL_SCALE + 1);
+	int size_y = txGetExtentY () / (PROCESSOR_PIXEL_SCALE + 1);
+
+	for (size_t x = 0; x < size_x; x++)
+	for (size_t y = 0; y < size_y; y++)
+	{
+		COLORREF color = (buffer[y*size_x + x] != 0)? foreground_color: background_color;
+		txSetColor     (color, 0);
+		txSetFillColor (color);
+
+		int x0 = x  * (PROCESSOR_PIXEL_SCALE + 1);
+		int y0 = y  * (PROCESSOR_PIXEL_SCALE + 1);
+		int x1 = x0 + PROCESSOR_PIXEL_SCALE;
+		int y1 = y0 + PROCESSOR_PIXEL_SCALE;
+
+		txRectangle (x0, y0, x1, y1);
+	}
+}
+				   
 //------------------------------
 
 void Processor::setReturnValue (double retval)

@@ -1,107 +1,107 @@
-push 10
-pop @ax
+push 50 > Window width
+pop [ 8 ]
 
-mov @ax, @bx
+push 50 > Window height
+pop [ 12 ]
 
->---------------------------------------
+push 20 > Circle radius
+pop [ 16 ]
 
-push 'H'
-pop @cx
-call :putchar
+push 3.14159265359 > PI
+pop [ 20 ]
 
-push 'e'
-pop @cx
-call :putchar
+>-----------------------
 
-push 'l'
-pop @cx
-call :putchar
+push [ 8  ]
+push [ 12 ]
+wnd
 
-push 'l'
-pop @cx
-call :putchar
+>-----------------------
 
-push 'o'
-pop @cx
-call :putchar
+> X center
+push [ 8 ]
+push 2
+div
+pop [ 24 ]
 
-push 44
-pop @cx
-call :putchar
+> Y center
+push [ 12 ]
+push 2
+div
+pop [ 28 ]
 
-push 32
-pop @cx
-call :putchar
+>-----------------------
 
-push 't'
-pop @cx
-call :putchar
+push 0
+pop @bx
 
-push 'e'
-pop @cx
-call :putchar
-
-push 's'
-pop @cx
-call :putchar
-
-push 't'
-pop @cx
-call :putchar
-
-push '!'
-pop @cx
-call :putchar
-
-call :endstr
-call :print
-
-hlt
-
->---------------------------------------
-
-putchar:
-	push @cx
-	pop [ @bx ]
-
+cycle_begin:
 	push @bx
-	valsz
+	
+	push [ 20 ]
+	push 2
+	mul
+
+	ja :cycle_end
+
+	> X = x_center + cos (angle) * radius
+	push @bx
+	cos
+	push [ 16 ]
+	mul
+	push [ 24 ]
+	add
+	floor
+	pop @cx
+
+	> Y = y_center + sin (angle) * radius
+	push @bx
+	sin
+	push [ 16 ]
+	mul
+	push [ 28 ]
+	add
+	floor
+	pop @dx
+	
+	call :putpixel
+
+	> Add PI / 64 to angle
+	push @bx
+	push [ 20 ]
+	push 64
+	div
 	add
 	pop @bx
 
+	jmp :cycle_begin
+	
+cycle_end:
+	display 64
+
+hlt
+
+>-----------------------
+
+putpixel:
+	push @dx
+	push [ 8 ]
+	mul
+
+	push @cx
+	add
+
+	valsz
+	mul
+
+	push 64
+	add
+
+	pop @ax
+	
+	push 1
+	pop [ @ax ]
+
 	ret
 
->---------------------------------------
-
-endstr:
-	push 0
-	pop [ @bx ]
-
-	ret
-
->---------------------------------------
-
-print:
-	mov @ax, @dx
-
-	jmp :print_cycle_begin
-	print_cycle_begin:
-		push [ @dx ]
-		push 0
-
-		je :print_cycle_end
-
-		push [ @dx ]
-		chout
-
-		push @dx
-		valsz
-		add
-		pop @dx
-
-		jmp :print_cycle_begin
-
-	print_cycle_end:
-		ret
-
->---------------------------------------
+>-----------------------

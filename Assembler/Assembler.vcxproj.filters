@@ -55,6 +55,9 @@
     <None Include="side.mcasm">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="print.mcasm">
+      <Filter>Resource Files</Filter>
+    </None>
     <None Include="source.mcasm">
       <Filter>Resource Files</Filter>
     </None>

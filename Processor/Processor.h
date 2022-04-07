@@ -104,6 +104,10 @@ private:
 	void          memSet (double address, stack_value_t value);
 	stack_value_t memGet (double address);
 
+	// Display
+	void openWindow (double size_x, double size_y);
+	void display    (double begin_addr);
+
 	// Other
 	void processInstruction (ByteCode cmd);
 	void setReturnValue (double retval);
