@@ -1,107 +1,170 @@
-push 50 > Window width
+push 50
+pop [ 0 ]
+
+push 50
+pop [ 4 ]
+
+push 10
 pop [ 8 ]
 
-push 50 > Window height
+push 10
 pop [ 12 ]
 
-push 20 > Circle radius
+push  0.6
 pop [ 16 ]
 
-push 3.14159265359 > PI
+push 1
 pop [ 20 ]
 
->-----------------------
-
-push [ 8  ]
-push [ 12 ]
-wnd
-
->-----------------------
-
-> X center
-push [ 8 ]
-push 2
-div
+push 64
 pop [ 24 ]
 
-> Y center
-push [ 12 ]
-push 2
-div
-pop [ 28 ]
+>-----------------------------
 
->-----------------------
+push [ 0 ]
+push [ 4 ]
+wnd
 
-push 0
-pop @bx
+call :main
+hlt
 
-cycle_begin:
-	push @bx
-	
-	push [ 20 ]
-	push 2
+>-----------------------------
+
+main:
+	main_cycle_begin:
+		call :move
+		call :draw
+		jmp :main_cycle_begin
+
+	main_cycle_end:
+		ret
+
+>-----------------------------
+
+draw:
+	call :clear
+
+	push [ 0  ]
+	push [ 12 ]
+	floor
 	mul
-
-	ja :cycle_end
-
-	> X = x_center + cos (angle) * radius
-	push @bx
-	cos
-	push [ 16 ]
+	push [ 8 ]
+	floor
+	add
+	valsz
 	mul
 	push [ 24 ]
 	add
-	floor
-	pop @cx
-
-	> Y = y_center + sin (angle) * radius
-	push @bx
-	sin
-	push [ 16 ]
-	mul
-	push [ 28 ]
-	add
-	floor
-	pop @dx
-	
-	call :putpixel
-
-	> Add PI / 64 to angle
-	push @bx
-	push [ 20 ]
-	push 64
-	div
-	add
-	pop @bx
-
-	jmp :cycle_begin
-	
-cycle_end:
-	display 64
-
-hlt
-
->-----------------------
-
-putpixel:
-	push @dx
-	push [ 8 ]
-	mul
-
-	push @cx
-	add
-
-	valsz
-	mul
-
-	push 64
-	add
-
 	pop @ax
-	
-	push 1
+	push 255
+	push 255
+	push 255
+	rgb
 	pop [ @ax ]
+
+	push [ 24 ]
+	pop @ax
+	display @ax
 
 	ret
 
->-----------------------
+>-----------------------------
+
+move:
+	push [ 8  ]
+	push [ 16 ]
+	add
+	pop [ 8 ]
+
+	call :turn_x
+
+	push [ 12 ]
+	push [ 20 ]
+	add
+	pop [ 12 ]
+
+	call :turn_y
+
+	ret
+
+>-----------------------------
+
+clear:
+	push 0
+	pop @ax
+
+	clear_cycle_begin:
+		push @ax
+
+		push [ 0 ]
+		push [ 4 ]
+		mul
+
+		jae :clear_cycle_end
+
+		push @ax
+		valsz
+		mul
+		push [ 24 ]
+		add
+		pop @bx
+		push 0
+		pop [ @bx ]
+
+		push @ax
+		push 1
+		add
+		pop @ax
+
+		jmp :clear_cycle_begin
+
+	clear_cycle_end:
+		ret
+
+>-----------------------------
+
+turn_x:
+	push [ 0 ]
+	push [ 8 ]
+	push 1
+	add
+	floor
+	jbe :turning_x
+
+	push 0
+	push [ 8 ]
+	floor
+	jae :turning_x
+
+	ret
+
+	turning_x:
+		push [ 16 ]
+		push -1
+		mul
+		pop [ 16 ]
+
+	ret
+
+turn_y:
+	push [ 4 ]
+	push [ 12 ]
+	floor
+	jb :turning_y
+
+	push 0
+	push [ 12 ]
+	floor
+	jae :turning_y
+
+	ret
+
+	turning_y:
+		push [ 20 ]
+		push -1
+		mul
+		pop [ 20 ]
+
+	ret
+
+>-----------------------------

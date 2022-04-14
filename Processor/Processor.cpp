@@ -4,8 +4,8 @@
 #include "Processor.h"
 #include "Utils.hpp"
 
-#include <TXLib.h>
 #include <shellscalingapi.h>
+#include <TXU.h>
 
 //------------------------------
 
@@ -30,8 +30,9 @@ int _ProcessorInitialized = InitProcessor ();
 //------------------------------
 
 Processor::Processor ():
-	m_stack   (),
-	m_program (),
+	m_stack      (),
+	m_call_stack (),
+	m_program    (),
 
 	m_stream_in  (nullptr),
 	m_stream_out (nullptr),
@@ -43,9 +44,19 @@ Processor::Processor ():
 
 	m_registers {},
 	m_memory    {},
+	
+	m_background (nullptr),
 
 	m_test_marker (0)
-{}
+{
+	setNumbersModifier (NUMBERS_MODIFIER);
+}
+
+Processor::~Processor ()
+{
+	if (m_background)
+		txDeleteDC (m_background);
+}
 
 //------------------------------
 
@@ -102,8 +113,24 @@ void Processor::error (const char* format, ...)
 {
 	va_list args = {};
 	va_start (args, format);
-	print (m_stream_out, format, args);
+	print (m_stream_err, format, args);
 	va_end (args);
+}
+
+void Processor::fatal (const char* format, ...)
+{
+	va_list args = {};
+	va_start (args, format);
+	print (m_stream_err, format, args);
+	va_end (args);
+
+	error ("Call stack:\n");
+	if (m_call_stack.empty ())
+		error ("Empty\n");
+
+	else for (stack_value_t addr: m_call_stack)
+		error ("  0x%0*X\n", 2 * sizeof (addr), addr);
+	error ("\n");
 }
 
 //------------------------------
@@ -125,15 +152,26 @@ void Processor::print (std::ostream* stream, const char* format, va_list args)
 
 double Processor::run ()
 {			
+	static const char* background_filename = "background.bmp";
+	m_background = txLoadImage (background_filename);
+	if (!m_background)
+		error ("Warning: Failed to load '%s'\n", background_filename);
+
+	m_stack.clear      ();
+	m_call_stack.clear ();
+
 	m_next_data_index = 0;
 	m_retval          = 0;
 
 	unsigned version = static_cast <unsigned> (nextStackValue ());
 	if (version != ASSEMBLER_VERSION)
 	{
-		error ("Fatal error: Wrong version (program version is %d, processor version is %d)\n", version, ASSEMBLER_VERSION);
+		fatal ("Fatal error: Wrong version (program version is %d, processor version is %d)\n", version, ASSEMBLER_VERSION);
 		throw processor_error ("Wrong program version (%d instead of %d)", version, ASSEMBLER_VERSION);
 	}
+
+	stack_value_t numbers_modifier = nextStackValue ();
+	setNumbersModifier (numbers_modifier);
 
 	bool running = true;
 	while (running)
@@ -158,7 +196,7 @@ value_t Processor::nextValue ()
 {
 	if (m_next_data_index >= m_program.bytes ())
 	{
-		error ("Fatal error: Program data corrupted");
+		fatal ("Fatal error: Program data corrupted");
 		throw processor_error ("Failed to get next value");
 	}
 
@@ -166,6 +204,13 @@ value_t Processor::nextValue ()
 	m_next_data_index += sizeof (value_t);
 
 	return value;
+}
+
+//------------------------------
+
+double Processor::nextNumber ()
+{
+	return static_cast <double> (nextValue <stack_value_t> ());
 }
 
 //------------------------------
@@ -195,17 +240,17 @@ stack_value_t* Processor::nextAddress (byte_type args)
 	if (args.is_address)
 	{
 		stack_value_t lft = 0;
-		if      (args.arg1_type == TokenType::Numeric ) lft = nextStackValue ();
+		if      (args.arg1_type == TokenType::Numeric ) lft = nextNumber ();
 		else if (args.arg1_type == TokenType::Register) lft = regGetStackValue (nextByte ());
 
 		stack_value_t rgt = 0;
-		if      (args.arg2_type == TokenType::Numeric ) rgt = nextStackValue ();
+		if      (args.arg2_type == TokenType::Numeric ) rgt = nextNumber ();
 		else if (args.arg2_type == TokenType::Register) rgt = regGetStackValue (nextByte ());
 
-		uintptr_t addr = static_cast <uintptr_t> (static_cast <double> (lft + rgt) / NUMBERS_MODIFIER);
+		uintptr_t addr = static_cast <uintptr_t> (static_cast <double> (lft + rgt) / getNumbersModifier ());
 		if (addr + sizeof (stack_value_t) > PROCESSOR_MEMORY_SIZE)
 		{
-			error ("Fatal error: Invalid address - 0x%08X\n", addr);
+			fatal ("Fatal error: Invalid address - 0x%08X\n", addr);
 			throw processor_error ("Invalid address - 0x%08X", addr);
 		}
 
@@ -220,7 +265,7 @@ stack_value_t* Processor::nextAddress (byte_type args)
 		else if (args.arg1_type == TokenType::Numeric)
 		{
 			static stack_value_t tmp_buff = 0;
-			tmp_buff = nextStackValue ();
+			tmp_buff = nextNumber ();
 			return &tmp_buff;
 		}
 	}
@@ -234,13 +279,13 @@ void Processor::jump (uintptr_t addr)
 {
 	if (addr >= m_program.bytes ())
 	{
-		error ("Fatal error: Invalid address (0x%08X), maximum possible address is 0x%08X\n", addr, m_program.bytes ());
+		fatal ("Fatal error: Invalid address (0x%08X), maximum possible address is 0x%08X\n", addr, m_program.bytes ());
 		throw processor_error ("Invalid address (0x%08X), maximum possible address is 0x%08X", addr, m_program.bytes ());
 	}
 
 	if (addr == ASSEMBLER_INVALID_ADDRESS)
 	{
-		error ("Fatal error: Invalid address (0x%08X)\n", addr);
+		fatal ("Fatal error: Invalid address (0x%08X)\n", addr);
 		throw processor_error ("Invalid address (0x%08X)", addr);
 	}
 
@@ -260,7 +305,7 @@ void Processor::processInstruction (ByteCode cmd)
 
 		default:
 		{
-			error ("Fatal error: Unknown instruction 0x%02X\n", cmd);
+			fatal ("Fatal error: Unknown instruction 0x%02X\n", cmd);
 			throw processor_error ("Unknown instruction 0x%02X\n", cmd);
 
 			break;
@@ -274,6 +319,12 @@ void Processor::processInstruction (ByteCode cmd)
 
 void Processor::push (stack_value_t value)
 {
+	if (PROCESSOR_STACK_LIMIT >= 0 && m_stack.size () >= PROCESSOR_STACK_LIMIT)
+	{
+		fatal ("Fatal error: Stack limit reached (%d)\n", PROCESSOR_STACK_LIMIT);
+		throw processor_error ("Stack limit reached (%d)\n", PROCESSOR_STACK_LIMIT);
+	}
+
 	m_stack.push (value);
 }
 
@@ -284,7 +335,7 @@ void Processor::pushCommand (ByteCode cmd)
 
 void Processor::pushNumber (double number)
 {
-	push (static_cast <stack_value_t> (floor (number * NUMBERS_MODIFIER)));
+	push (static_cast <stack_value_t> (floor (number * getNumbersModifier ())));
 }
 
 //------------------------------
@@ -293,7 +344,7 @@ stack_value_t Processor::popValue ()
 {
 	if (m_stack.empty ())
 	{
-		error ("Fatal error: trying to pop value, but stack is empty");
+		fatal ("Fatal error: trying to pop value, but stack is empty\n");
 		throw processor_error ("Trying to pop empty stack");
 	}
 
@@ -307,7 +358,7 @@ ByteCode Processor::popInstruction ()
 
 double Processor::popNumber ()
 {
-	return static_cast <double> (popValue ()) / NUMBERS_MODIFIER;
+	return static_cast <double> (popValue ()) / getNumbersModifier ();
 }
 
 void Processor::pop ()
@@ -324,11 +375,46 @@ stack_value_t Processor::top ()
 
 //------------------------------
 
+void Processor::pushCall (stack_value_t addr)
+{
+	if (PROCESSOR_CALL_STACK_LIMIT >= 0 && m_call_stack.size () >= PROCESSOR_CALL_STACK_LIMIT)
+	{
+		fatal ("Fatal error: Call stack limit reached (%d)\n", PROCESSOR_CALL_STACK_LIMIT);
+		throw processor_error ("Call stack limit reached (%d)\n", PROCESSOR_CALL_STACK_LIMIT);
+	}
+
+	m_call_stack.push (addr);
+}
+
+stack_value_t Processor::popCall ()
+{
+	if (m_call_stack.empty ())
+	{
+		fatal ("Fatal error: Call stack is empty (using jmp instead of call?)");
+		throw processor_error ("Call stack is empty");
+	}
+
+	return m_call_stack.pop ();
+}
+
+stack_value_t Processor::topCall ()
+{
+	if (m_call_stack.empty ())
+	{
+		fatal ("Fatal error: Call stack is empty (using jmp instead of call?)");
+		throw processor_error ("Call stack is empty");
+	}
+
+	return m_call_stack.top ();
+}
+
+//------------------------------
+
 void Processor::regSet (size_t index, stack_value_t value)
 {
 	if (index >= REGISTERS_COUNT)
 	{
-		error ("Fatal error: Invalid register index 0x%02X\n", index);
+		fatal ("Fatal error: Invalid register index 0x%02X\n", index);
 		throw processor_error ("Invalid register index 0x%02X", index);
 	}
 
@@ -342,7 +428,7 @@ void Processor::regSetCommand (size_t index, ByteCode cmd)
 
 void Processor::regSetNumber (size_t index, double number)
 {
-	regSet (index, static_cast <stack_value_t> (floor (number * NUMBERS_MODIFIER)));
+	regSet (index, static_cast <stack_value_t> (floor (number * getNumbersModifier ())));
 }
 
 //------------------------------
@@ -351,7 +437,7 @@ stack_value_t Processor::regGetStackValue (size_t index)
 {
 	if (index >= REGISTERS_COUNT)
 	{
-		error ("Fatal error: Invalid register index 0x%02X\n", index);
+		fatal ("Fatal error: Invalid register index 0x%02X\n", index);
 		throw processor_error ("Invalid register index 0x%02X", index);
 	}
 
@@ -365,7 +451,19 @@ ByteCode Processor::regGetInstruction (size_t index)
 
 double Processor::regGetNumber (size_t index)
 {
-	return static_cast <double> (regGetStackValue (index)) / NUMBERS_MODIFIER;
+	return static_cast <double> (regGetStackValue (index)) / getNumbersModifier ();
+}
+
+//------------------------------
+
+void Processor::setNumbersModifier (stack_value_t modifier)
+{
+	regSet (NUMBERS_MODIFIER_REGISTER, modifier);
+}
+
+stack_value_t Processor::getNumbersModifier ()
+{
+	return regGetStackValue (NUMBERS_MODIFIER_REGISTER);
 }
 
 //------------------------------
@@ -376,7 +474,7 @@ void Processor::memSet (double address, stack_value_t value)
 
 	if (addr + sizeof (stack_value_t) > PROCESSOR_MEMORY_SIZE)
 	{
-		error ("Fatal error: Invalid address - 0x%08X\n", addr);
+		fatal ("Fatal error: Invalid address - 0x%08X\n", addr);
 		throw processor_error ("Invalid address - 0x%08X", addr);
 	}
 
@@ -400,14 +498,23 @@ stack_value_t Processor::memGet (double address)
 
 void Processor::openWindow (double size_x, double size_y)
 {
+	if (txWindow ())
+		return;
+
 	txCreateWindow (static_cast <int> (size_x * (PROCESSOR_PIXEL_SCALE + 1)), static_cast <int> (size_y * (PROCESSOR_PIXEL_SCALE + 1)));
 	SetWindowTextA (txWindow (), "MCASM Virtual processor display window");
 
-	HICON icon = (HICON) LoadImageA (NULL, "icon.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE | LR_SHARED);
+	static const char* icon_filename = "icon.ico";
+	HICON icon = (HICON) LoadImageA (NULL, icon_filename, IMAGE_ICON, 32, 32, LR_LOADFROMFILE | LR_SHARED);
 	if (icon)
 	{
 		SendMessageA (txWindow (), WM_SETICON, ICON_SMALL, (LPARAM) icon);
 		SendMessageA (txWindow (), WM_SETICON, ICON_BIG,   (LPARAM) icon);
+	}
+
+	else
+	{
+		error ("Warning: Failed to load '%s'\n", icon_filename);
 	}
 }
 
@@ -420,21 +527,25 @@ void Processor::display (double begin_addr)
 	if (!txWindow ())
 		return;
 
-	HDC background = txLoadImage ("background.bmp");
-	StretchBlt (txDC (), 0, 0, txGetExtentX (), txGetExtentY (), background, 0, 0, txGetExtentX (background), txGetExtentY (background), SRCCOPY);
-	txDeleteDC (background);
+	if (m_background)
+		StretchBlt (txDC (), 0, 0, txGetExtentX (), txGetExtentY (), m_background, 0, 0, txGetExtentX (m_background), txGetExtentY (m_background), SRCCOPY);
 
-	//txSetFillColor (frame_color);
-	//txClear        ();
+	else
+	{
+		txSetFillColor (frame_color);
+		txClear        ();
+	}
 
 	stack_value_t* buffer = reinterpret_cast <stack_value_t*> (m_memory + static_cast <size_t> (floor (begin_addr)));
 	int size_x = txGetExtentX () / (PROCESSOR_PIXEL_SCALE + 1);
 	int size_y = txGetExtentY () / (PROCESSOR_PIXEL_SCALE + 1);
 
+	txBegin ();
+
 	for (size_t x = 0; x < size_x; x++)
 	for (size_t y = 0; y < size_y; y++)
 	{
-		COLORREF color = (buffer[y*size_x + x] != 0)? foreground_color: background_color;
+		COLORREF color = static_cast <COLORREF> (buffer[y*size_x+x]);
 		txSetColor     (color, 0);
 		txSetFillColor (color);
 
@@ -445,6 +556,8 @@ void Processor::display (double begin_addr)
 
 		txRectangle (x0, y0, x1, y1);
 	}
+
+	txEnd ();
 }
 				   
 //------------------------------

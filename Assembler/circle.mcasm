@@ -1,0 +1,136 @@
+push 100 > Window width
+pop [ 8 ]
+
+push 100 > Window height
+pop [ 12 ]
+
+push 40 > Circle radius
+pop [ 16 ]
+
+push 3.14159265359 > PI
+pop [ 20 ]
+
+>-----------------------
+
+push [ 8  ]
+push [ 12 ]
+wnd
+
+>-----------------------
+
+> X center
+push [ 8 ]													
+push 2
+div
+pop [ 24 ]
+
+> Y center
+push [ 12 ]
+push 2
+div
+pop [ 28 ]
+
+>-----------------------
+
+call :draw_circle
+display 64
+pause
+hlt
+
+>-----------------------
+
+draw_circle:
+	push 0
+	pop @bx
+	jmp :circle_cycle_begin
+
+	circle_cycle_begin:
+		> Check if angle < pi*2
+
+		push @bx
+
+		push [ 20 ]
+		push 2
+		mul
+
+		ja :circle_cycle_end
+
+		> Calculating x; x = x_center + cos (angle) * radius
+		push @bx
+		cos
+		push [ 16 ]
+		mul
+		push [ 24 ]
+		add
+		floor
+		pop @cx
+
+		> Calculating y; y = y_center + sin (angle) * radius
+		push @bx
+		sin
+		push [ 16 ]
+		mul
+		push [ 28 ]
+		add
+		floor
+		pop @dx
+	
+		> Setting pixel
+		push 255
+		push 255
+		push 255
+		rgb
+		
+		call :putpixel
+
+		> Add PI / 128 to angle
+		push @bx
+		push [ 20 ]
+		push 128
+		div
+		add
+		pop @bx
+
+		jmp :circle_cycle_begin
+	
+	circle_cycle_end:
+		ret
+
+>-----------------------
+
+putpixel:
+	> X and Y are in @cx and @dx registers; window width and height are at [ 8 ] and [ 12 ] in memory
+	> Calculating pixel index; index = y*max_x + x
+
+	push @dx
+	push [ 8 ]
+	mul
+
+	push @cx
+	add
+
+	> Start address is 64
+	> Calculating pixel address; addr = start_addr + index * size_of_value
+
+	valsz
+	mul
+
+	push 64
+	add
+
+	> Setting pixel
+	pop @ax
+	pop [ @ax ]
+
+	ret
+
+>-----------------------
+
+inspect:
+	dup
+	out
+	pause
+
+	ret
+
+>-----------------------

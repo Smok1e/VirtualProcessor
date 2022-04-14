@@ -1,0 +1,216 @@
+>-------------------------------
+
+call :init	
+call :window
+call :draw
+call :display
+hlt
+
+>-------------------------------
+
+init:
+	> Window width
+	push 50 
+	pop [ 0 ]
+
+	> Window height
+	push 50 
+	pop [ 4 ]
+
+	> Start color
+	push 0
+	push 170
+	push 255
+	rgb
+	pop [ 8 ]
+
+	> End color
+	push 255
+	push 0
+	push 60
+	rgb
+	pop [ 12 ]
+
+	> Start address
+	push 64
+	pop [ 16 ]
+
+	ret
+
+>-------------------------------
+
+window:
+	push [ 0 ]
+	push [ 4 ]
+	wnd
+
+>-------------------------------
+
+draw:
+	push 0
+	pop [ 20 ]
+
+	draw_cycle_begin:
+		push [ 20 ]
+
+		push [ 0 ]
+		push [ 4 ]
+		mul
+
+		jae :draw_cycle_end
+
+		push [ 20 ]
+		call :index_to_x
+
+		push [ 0 ]
+		div
+
+		call :interpolate
+
+		push [ 20 ]
+		valsz
+		mul
+		push [ 16 ]
+		add
+		pop @ax
+		pop [ @ax ]
+
+		push [ 20 ]
+		push 1
+		add
+		pop [ 20 ]
+
+		push [ 20 ]
+		call :index_to_y
+		
+		dup
+		push @dx
+		je :skip
+
+		display 64
+
+		skip:
+
+		pop @dx
+
+		jmp :draw_cycle_begin
+
+	draw_cycle_end:
+		ret
+
+>-------------------------------
+
+display:
+	push [ 16 ]
+	pop @ax
+	display @ax
+	pause
+	ret
+
+>-------------------------------
+
+index_to_x:
+	push [ 0 ]
+	div
+	floor
+
+	ret
+
+>-------------------------------
+
+index_to_y:
+	push [ 0 ]
+	rmd
+
+	ret
+
+>-------------------------------
+
+interpolate:
+	pop @ax
+
+	push [ 8 ]
+	extr
+
+	push [ 12 ]
+	extr
+	push [ 8 ]
+	extr
+	sub
+	push @ax
+	mul
+	add
+
+	push [ 8 ]
+	extg
+
+	push [ 12 ]
+	extg
+	push [ 8 ]
+	extg
+	sub
+	push @ax
+	mul
+	add
+	  
+	push [ 8 ]
+	extb
+
+	push [ 12 ]
+	extb
+	push [ 8 ]
+	extb
+	sub
+	push @ax
+	mul
+	add
+	
+	rgb
+
+	ret
+
+>-------------------------------
+
+inspect: 
+	push 'I'
+	chout
+
+	push 'n'
+	chout
+
+	push 's'
+	chout
+
+	push 'p'
+	chout
+
+	push 'e'
+	chout
+
+	push 'c'
+	chout
+
+	push 't'
+	chout
+
+	push 'i'
+	chout
+
+	push 'o'
+	chout
+
+	push 'n'
+	chout
+
+	push ':'
+	chout
+
+	push 10
+	chout
+
+	dstk
+	pause
+
+	ret
+
+>-------------------------------

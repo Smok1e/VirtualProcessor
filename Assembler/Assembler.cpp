@@ -1,6 +1,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <chrono>
 
 #include "Assembler.h"
 #include "Utils.hpp"
@@ -29,7 +30,8 @@ Assembler::Assembler ():
 	m_listing_settings (DEFAULT_LISTINGS_SETTINGS),
 	m_name_table       {},
 	m_empty_jumps      (false),
-	m_pass_number      (0)
+	m_pass_number      (0),
+	m_numbers_modifier (NUMBERS_MODIFIER)
 {}
 
 //------------------------------
@@ -135,11 +137,20 @@ Assembler::listing_settings Assembler::getListingSettings ()
 
 void Assembler::compile ()
 {
+	auto begin = std::chrono::steady_clock::now ();
+
 	m_pass_number = 0;
 	m_name_table.clear ();
 	m_program.clear ();
 	while (assemble ()) 
 		m_pass_number++;
+
+	auto end  = std::chrono::steady_clock::now ();
+	auto msec = std::chrono::duration_cast <std::chrono::milliseconds> (end - begin);
+
+	listing ("\n==========================\n\n");
+	listing ("Compilation done in %zu passes, %d msec.\n", m_pass_number+1, msec.count ());
+	listing ("Generated %zu bytes of code\n", m_program.bytes ());
 }
 
 //------------------------------
@@ -153,12 +164,17 @@ bool Assembler::assemble ()
 	m_program_index    = 0;
 	m_next_token_index = 0;
 
-	listing ("\nAssembling pass #%zu:\n", m_pass_number);
+	listing ("\nAssembling pass #%zu:\n", m_pass_number+1);
 
 	m_program.set (m_program_index, static_cast <stack_value_t> (ASSEMBLER_VERSION));
 	m_program_index += sizeof (stack_value_t);
 
 	listing_line (-1, 0, m_program.begin (), sizeof (stack_value_t), "[version]");
+
+	size_t beg = m_program_index;
+	m_program.set (m_program_index, static_cast <stack_value_t> (m_numbers_modifier));
+	m_program_index += sizeof (stack_value_t);
+	listing_line (-1, beg, m_program.begin () + beg, sizeof (stack_value_t), "[precision]");
 
 	while (m_next_token_index < m_source_code.tokens_count)
 	{
@@ -323,15 +339,15 @@ TokenType Assembler::determineTokenType (const char* begin, const char* end)
 stack_value_t Assembler::interpretNumberToken (const char* str, size_t len)
 {
 	if (len > 2 && strncmp (str, "0x", 2) == 0)
-		return static_cast <stack_value_t> (strtol (str, nullptr, 16) * NUMBERS_MODIFIER);
+		return static_cast <stack_value_t> (strtol (str, nullptr, 16) * m_numbers_modifier);
 
 	if (len == 3 && *str == '\'' && str[2] == '\'')
-		return static_cast <stack_value_t> (str[1] * NUMBERS_MODIFIER);
+		return static_cast <stack_value_t> (str[1] * m_numbers_modifier);
 
 	if (!IsNumeric (str, len))
 		throw assembler_error ("Syntax error: '%.*s' is not numeric", len, str);
 
-	return static_cast <stack_value_t> (floor (strtod (str, nullptr) * NUMBERS_MODIFIER));
+	return static_cast <stack_value_t> (floor (strtod (str, nullptr) * m_numbers_modifier));
 }
 
 //------------------------------
@@ -568,7 +584,7 @@ const char* Assembler::StrTokenType (TokenType type)
 
 double Assembler::toNumber (stack_value_t value)
 {
-	return static_cast <double> (value) / NUMBERS_MODIFIER;
+	return static_cast <double> (value) / m_numbers_modifier;
 }
 
 //------------------------------

@@ -66,6 +66,7 @@ private:
 	int              m_next_token_index;
 	std::ostream*    m_listing_stream;
 	size_t           m_pass_number;
+	stack_value_t    m_numbers_modifier;
 
 	struct source_code_container
 	{

@@ -58,6 +58,12 @@
     <None Include="print.mcasm">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="circle.mcasm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="gradient.mcasm">
+      <Filter>Resource Files</Filter>
+    </None>
     <None Include="source.mcasm">
       <Filter>Resource Files</Filter>
     </None>

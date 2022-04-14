@@ -61,6 +61,13 @@ void ProgramContainer::load (const char* filename)
 
 //------------------------------
 
+void ProgramContainer::insert (size_t index_in_bytes, const byte_t* data, size_t count_in_bytes)
+{
+	m_data.insert (m_data.begin (), data, data+count_in_bytes);
+}
+
+//------------------------------
+
 void ProgramContainer::extend (const byte_t* src, size_t count)
 {
 	m_data.insert (m_data.end (), src, src+count);

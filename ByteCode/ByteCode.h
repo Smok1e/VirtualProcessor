@@ -103,15 +103,18 @@ extern const unsigned         REGISTER_SEQUENCE_LEN;
 extern const char*            ADDRESS_SEQUENCE;
 extern const unsigned         ADDRESS_SEQUENCE_LEN;
 
-//     const unsigned         NUMBERS_ACURACY           = 3;
-       const unsigned         NUMBERS_MODIFIER	        = 0x100;               // == 256;
-       const unsigned         ASSEMBLER_VERSION         = 21;
-       const unsigned         ASSEMBLER_BUFFSIZE        = 1024;
-	   const unsigned         PROCESSOR_MEMORY_SIZE     = 64 * 1024;           // 64K
-       const unsigned         PROCESSOR_PIXEL_SCALE     = 10;
-       const unsigned __int32 PROGRAM_SIGNATURE         = TXT232UINT ("Meow"); // MEOW - Mcasm Executable Outrage Waffle
-	   const unsigned __int8  REGISTERS_COUNT           = 4;
-	   const size_t           ASSEMBLER_INVALID_ADDRESS = 0;                   // null address can't be valid, because there is assembler version info stored
+//     const unsigned         NUMBERS_ACURACY            = 3;
+       const unsigned         NUMBERS_MODIFIER	         = 0x100;                                // == 256;
+	   const unsigned __int8  REGISTERS_COUNT            = 5;
+       const unsigned         ASSEMBLER_VERSION          = 25;
+       const unsigned         ASSEMBLER_BUFFSIZE         = 1024;
+	   const size_t           ASSEMBLER_INVALID_ADDRESS  = std::numeric_limits <size_t>::max (); // null is a valid address
+	   const int              PROCESSOR_STACK_LIMIT      = 64;                                   // -1 = no limit
+	   const int              PROCESSOR_CALL_STACK_LIMIT = 32;                                   // -1 = no limit
+	   const unsigned         PROCESSOR_MEMORY_SIZE      = 64 * 1024;                            // 64K
+       const unsigned         PROCESSOR_PIXEL_SCALE      = 10;
+       const unsigned __int32 PROGRAM_SIGNATURE          = TXT232UINT ("Meow");                  // MEOW - Mcasm Executable Outrage Waffle
+	   const size_t           NUMBERS_MODIFIER_REGISTER  = 4;
 
 //------------------------------
 

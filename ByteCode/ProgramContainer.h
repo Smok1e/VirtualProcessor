@@ -26,6 +26,8 @@ public:
 	template <typename value_t>
 	void set (size_t index_in_bytes, value_t value);
 
+	void insert (size_t index_in_bytes, const byte_t* data, size_t count_in_bytes);
+
 	bool   empty () const;
 	size_t bytes () const;
 

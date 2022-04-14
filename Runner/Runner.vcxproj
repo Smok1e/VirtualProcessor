@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{0e5216fa-0465-4783-bd45-03613be492ec}</ProjectGuid>
-    <RootNamespace>Assembler</RootNamespace>
+    <ProjectGuid>{9027a23e-0b9b-47fb-b650-609ad8c10663}</ProjectGuid>
+    <RootNamespace>Runner</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -88,8 +88,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;C:\Users\fedot\source\repos\Processor\Processor;C:\Users\fedot\source\repos\Processor\Assembler;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,8 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;C:\Users\fedot\source\repos\Processor\Processor;C:\Users\fedot\source\repos\Processor\Assembler;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,8 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\Stack;..\ByteCode;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;C:\Users\fedot\source\repos\Processor\Processor;C:\Users\fedot\source\repos\Processor\Assembler;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,8 +133,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\fedot\source\repos\Processor\Stack;C:\Users\fedot\source\repos\Processor\ByteCode;C:\Users\fedot\source\repos\Processor\Processor;C:\Users\fedot\source\repos\Processor\Assembler;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,28 +143,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Assembler\Assembler.cpp" />
     <ClCompile Include="..\ByteCode\ByteCode.cpp" />
     <ClCompile Include="..\ByteCode\ExceptionMessage.cpp" />
     <ClCompile Include="..\ByteCode\ProgramContainer.cpp" />
     <ClCompile Include="..\ByteCode\Utils.cpp" />
+    <ClCompile Include="..\Processor\Processor.cpp" />
     <ClCompile Include="..\Stack\Stack.cpp" />
     <ClCompile Include="..\Stack\StackCheckError.cpp" />
-    <ClCompile Include="Assembler.cpp" />
-    <ClCompile Include="AssemblerMain.cpp" />
-    <None Include="side.mcasm">
-      <FileType>Document</FileType>
-    </None>
+    <ClCompile Include="RunnerMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assembler.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="qe.mcasm" />
-    <None Include="print.mcasm" />
-    <None Include="circle.mcasm" />
-    <None Include="gradient.mcasm" />
-    <None Include="source.mcasm" />
-    <None Include="square_table.mcasm" />
+    <Image Include="kbackground.bmp" />
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

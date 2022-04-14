@@ -1,4 +1,9 @@
 #pragma once
+#pragma warning (disable: 6031)
+
+//------------------------------
+
+#define TOKENS_(...) std::initializer_list <TokenType> (__VA_ARGS__)
 
 //------------------------------
 
@@ -22,8 +27,16 @@ if (condition__) { jump (addr); }
 
 //------------------------------
 
-#define TOKENS_(...) std::initializer_list <TokenType> (__VA_ARGS__)
- 
+#define RGB_EXTRACT__(channel__)                                                        \
+ACD_ (ext##channel__, TOKENS_ ({}),                                                     \
+"ext" #channel__ " - extract " #channel__ " channel value from rgb color",              \
+{                                                                                       \
+    double channel = txu::Color (static_cast <COLORREF> (popValue ())).##channel__;     \
+    pushNumber (channel);                                                               \
+})
+
+//------------------------------
+
 #define COMMANDS_DEFINES_                                                                                                                                                                         \
 ACD_ (push, TOKENS_ ({TokenType::Numeric | TokenType::Register, TokenType::None | TokenType::Numeric | TokenType::Register}),                                                                     \
 "push <number/register> - push number value to stack",                                                                                                                                            \
@@ -72,6 +85,14 @@ ACD_ (div, TOKENS_ ({}),                                                        
         throw processor_error ("Zero division");                                                                                                                                                  \
     }                                                                                                                                                                                             \
     pushNumber (lft / rgt);                                                                                                                                                                       \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (rmd, TOKENS_ ({}),                                                                                                                                                                          \
+"rmd - division remainder",                                                                                                                                                                       \
+{                                                                                                                                                                                                 \
+    int rgt = static_cast <int> (floor (popNumber ()));                                                                                                                                           \
+    int lft = static_cast <int> (floor (popNumber ()));                                                                                                                                           \
+    pushNumber (lft % rgt);                                                                                                                                                                       \
 })                                                                                                                                                                                                \
                                                                                                                                                                                                   \
 ACD_ (in, TOKENS_ ({}),                                                                                                                                                                           \
@@ -124,7 +145,7 @@ ACD_ (dreg, TOKENS_ ({}),                                                       
 {                                                                                                                                                                                                 \
     output ("Registers dump:\n");                                                                                                                                                                 \
     for (size_t i = 0; i < REGISTERS_COUNT; i++)                                                                                                                                                  \
-        output ("  %s: 0x%0*X (%lf)\n", StrRegisterIndex (i), sizeof (stack_value_t)*2, regGetStackValue (i), regGetNumber (i));                                                                  \
+        output ("  %s: 0x%0*X (%lf)\n", StrRegisterIndex (i), sizeof (stack_value_t)*2, regGetStackValue (i), (i == NUMBERS_MODIFIER_REGISTER)? (double) regGetStackValue (i): regGetNumber (i)); \
                                                                                                                                                                                                   \
     output ("\n");                                                                                                                                                                                \
 })                                                                                                                                                                                                \
@@ -195,7 +216,7 @@ ACD_ (jne, TOKENS_ ({TokenType::LabelRef}),                                     
 ACD_ (ja, TOKENS_ ({TokenType::LabelRef}),                                                                                                                                                        \
 "jb <label> - jump to a label point if lft > rgt",                                                                                                                                                \
 {                                                                                                                                                                                                 \
-    JUMP_IF__ (lft > rgt)                                                                                                                                                                        \
+    JUMP_IF__ (lft > rgt)                                                                                                                                                                         \
 })                                                                                                                                                                                                \
                                                                                                                                                                                                   \
 ACD_ (jb, TOKENS_ ({TokenType::LabelRef}),                                                                                                                                                        \
@@ -228,14 +249,14 @@ ACD_ (call, TOKENS_ ({TokenType::LabelRef}),                                    
 "call <label> - call a function",                                                                                                                                                                 \
 {                                                                                                                                                                                                 \
     stack_value_t addr = nextStackValue ();                                                                                                                                                       \
-    push (static_cast <stack_value_t> (m_next_data_index));                                                                                                                                       \
+    pushCall (static_cast <stack_value_t> (m_next_data_index));                                                                                                                                   \
     jump (addr);                                                                                                                                                                                  \
 })                                                                                                                                                                                                \
                                                                                                                                                                                                   \
 ACD_ (ret, TOKENS_ ({}),                                                                                                                                                                          \
 "ret - return to previous location after call",                                                                                                                                                   \
 {                                                                                                                                                                                                 \
-    size_t addr = static_cast <size_t> (popValue ());                                                                                                                                             \
+    size_t addr = static_cast <size_t> (popCall ());                                                                                                                                              \
     jump (addr);                                                                                                                                                                                  \
 })                                                                                                                                                                                                \
                                                                                                                                                                                                   \
@@ -284,5 +305,40 @@ ACD_ (floor, TOKENS_ ({}),                                                      
 {                                                                                                                                                                                                 \
     pushNumber (floor (popNumber ()));                                                                                                                                                            \
 })                                                                                                                                                                                                \
-                                                                                                                                                                                                  
+                                                                                                                                                                                                  \
+ACD_ (pause, TOKENS_ ({}),                                                                                                                                                                        \
+"pause - wait for any key input",                                                                                                                                                                 \
+{                                                                                                                                                                                                 \
+    output ("[Press any key to continue]\n");                                                                                                                                                     \
+    _getch ();                                                                                                                                                                                    \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (rgb, TOKENS_ ({}),                                                                                                                                                                          \
+"rgb - mix 3 top stack values to rgb color",                                                                                                                                                      \
+{                                                                                                                                                                                                 \
+    double b = popNumber ();                                                                                                                                                                      \
+    double g = popNumber ();                                                                                                                                                                      \
+    double r = popNumber ();                                                                                                                                                                      \
+    push (static_cast <stack_value_t> (RGB (r, g, b)));                                                                                                                                           \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+RGB_EXTRACT__ (r)                                                                                                                                                                                 \
+RGB_EXTRACT__ (g)                                                                                                                                                                                 \
+RGB_EXTRACT__ (b)                                                                                                                                                                                 \
+                                                                                                                                                                                                  \
+ACD_ (hsv, TOKENS_ ({}),                                                                                                                                                                          \
+"hsv - mix 3 top stack values to hsv color",                                                                                                                                                      \
+{                                                                                                                                                                                                 \
+    double v = popNumber ();                                                                                                                                                                      \
+    double s = popNumber ();                                                                                                                                                                      \
+    double h = popNumber ();                                                                                                                                                                      \
+    push (static_cast <stack_value_t> (txRGB2HSL (RGB (h, s, v))));                                                                                                                               \
+})                                                                                                                                                                                                \
+                                                                                                                                                                                                  \
+ACD_ (brk, TOKENS_ ({}),                                                                                                                                                                          \
+"brk - debug break",                                                                                                                                                                              \
+{                                                                                                                                                                                                 \
+    DebugBreak ();                                                                                                                                                                                \
+})                                                                                                                                                                                                
+
 //------------------------------

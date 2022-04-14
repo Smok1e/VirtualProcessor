@@ -8,10 +8,11 @@
 #include "ByteCode.h"
 #include "Stack.h"
 #include "ProgramContainer.h"
+#include <TXLib.h>
 
 //------------------------------
 
-typedef Stack <stack_value_t> ProgramStack;
+typedef Stack <stack_value_t> ProgramStack, CallStack;
 
 //------------------------------
 
@@ -28,7 +29,8 @@ public:
 class Processor
 {
 public:
-	Processor ();
+	 Processor ();
+	~Processor ();
 
 	void                    setProgram (const ProgramContainer& program);
 	const ProgramContainer& getProgram ();
@@ -45,11 +47,14 @@ public:
 	std::string input  ();
 	void        output (const char* format, ...);
 	void        error  (const char* format, ...);
+	void        fatal  (const char* format, ...);
 
 	double run ();
 
 private:
 	ProgramStack     m_stack;
+	CallStack        m_call_stack;
+
 	ProgramContainer m_program;
 
 	std::istream* m_stream_in;
@@ -63,13 +68,16 @@ private:
 	stack_value_t m_registers [REGISTERS_COUNT];
 	byte_t        m_memory    [PROCESSOR_MEMORY_SIZE];
 
+	HDC m_background;
+
 	int m_test_marker;
 
 	// IO
 	void print (std::ostream* stream, const char* format, va_list args);
 
 	// Program data
-	template <typename value_t> value_t nextValue ();
+	template <typename value_t> value_t nextValue       ();
+	double                              nextNumber      ();
 	ByteCode                            nextInstruction ();
 	stack_value_t                       nextStackValue  ();
 	byte_type                           nextByteType    ();
@@ -78,7 +86,6 @@ private:
 	stack_value_t* nextAddress (byte_type args);
 
 	void jump (uintptr_t addr);
-
 
 	// Stack
 	void push        (stack_value_t value );
@@ -91,6 +98,11 @@ private:
 	void          pop            ();
 	stack_value_t top            ();
 
+	// Call stack
+	void          pushCall (stack_value_t addr);
+	stack_value_t popCall  ();
+	stack_value_t topCall  ();
+
 	// Registers
 	void          regSet            (size_t index, stack_value_t value );
 	void          regSetCommand     (size_t index, ByteCode      cmd   );
@@ -99,6 +111,9 @@ private:
 	stack_value_t regGetStackValue  (size_t index);
 	ByteCode      regGetInstruction (size_t index);
 	double        regGetNumber      (size_t index);
+
+	void          setNumbersModifier (stack_value_t modifier);
+	stack_value_t getNumbersModifier ();
 
 	// Memory
 	void          memSet (double address, stack_value_t value);
